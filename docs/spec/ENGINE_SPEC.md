@@ -418,7 +418,7 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 - **Goal:** detect collisions between the ship and other sprites (e.g. asteroids or walls).
 - **Proves:** a Rust collision system that is fast enough for the Phase 3 sprite counts.
 - **Requirement:** all collision detection runs in **Rust**. Python only receives results.
-- **Design:** open, needs research. See §11.
+- **Design:** open, needs research. See §11. The architecture must be decided before or as part of this phase (owner, 2026-10-12).
 - **Done when:** the ship collides correctly with many objects, and collision checks for Phase 3-scale lists fit within the frame budget.
 
 ### Milestone: Performance showcase demo (after Phase 5)
@@ -446,7 +446,7 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 
 ## 11. Collision System (Open Design)
 
-*(Not decided. To be researched before Phase 5.)*
+*(Not decided. Owner direction, 2026-10-12: the collision architecture must be decided **before Phase 5 or as part of Phase 5**, at the latest during Phase 5's spec and plan.)*
 
 ### Requirements so far
 - Implemented in Rust, with no per-object Python work during collision checks.
@@ -599,6 +599,7 @@ ferrocade/                 # repo root
 | 2026-10-12 | Phase 3 implemented: target met (100,000 engine-moved sprites at 60 FPS on the integrated GPU; Arcade 4.0.0.dev8 8,000; pygame-ce 16,500); no optimization needed | `docs/research/phase3-benchmarks.md` |
 | 2026-10-12 | Phase 3 benchmark method: sustainable = FPS ≥ 59 and per-frame work < 14 ms; each engine/scene in its own process; Arcade paced with vsync and 1/240 rates, Pygame with `Clock.tick(60)` and no spin | Deviations from the plan, needed for fair Windows pacing; see the fairness notes in the report |
 | 2026-10-12 | Prefer the high-performance (discrete) GPU by default (wgpu `PowerPreference::HighPerformance`) | Owner chose option A after the Phase 3 finding; §4 |
+| 2026-10-12 | The collision architecture (§11) is decided before Phase 5 or as part of Phase 5 | Owner direction; the design itself stays open until then |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
 | 2026-10-12 | Collision detection implemented in Rust | Design open (§11) |
 | 2026-10-12 | winit for windowing | Confirmed |
