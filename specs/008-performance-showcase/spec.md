@@ -145,9 +145,9 @@ The same showcase runs in the browser. The numbers print to the browser's develo
 
 - **Defaults for the owner's open items 6–7** (not objected to): keys to add/remove 1,000 balls and to toggle and pause; a target of 10,000 balls at 60 FPS in engine mode on desktop, with browser numbers reported only; this feature number with `examples/06_showcase.py`; no side-by-side comparison with other engines.
 - **Key choices:** `+`/`=` add 1,000, `-` removes 1,000, `T` toggles the bouncing mode, `Space` pauses.
-- **Ball sizes:** radius 3–6 px. All balls have **equal mass** regardless of size (owner decision: equal-mass physics).
-- **Ball speeds:** 50–250 px/s, so balls move less than their radius per update at 60 Hz.
-- **Walls:** four rectangles, 10 px thick, around an 800×600 area matching the window.
+- **Ball sizes:** radius 2–4 px. All balls have **equal mass** regardless of size (owner decision: equal-mass physics). *(Corrected at planning: radius 3–6 px in 800×600 can't hold 10,000 balls; see research R1.)*
+- **Ball speeds:** 40–200 px/s, so balls move less than their diameter per update at 60 Hz.
+- **Walls:** four rectangles, 10 px thick, around a 1280×720 area matching the window. The showcase starts with 5,000 balls; 10,000 is reached with the add key or `--balls 10000`.
 - **Only sprites with circle colliders are bounced.** Others in a bounce call are skipped. Walls can be any collider shape.
 - **Contact resolution is one pass per update** over the touching pairs found by the engine's collision queries, in a fixed order, so results are deterministic and the same in both modes.
 - **The browser** prints with the standard console. Its numbers are informational.
