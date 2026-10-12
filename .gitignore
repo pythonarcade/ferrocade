@@ -1,0 +1,30 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+.pytest_cache/
+
+# Native extension builds (maturin develop)
+python/ferrocade/*.pyd
+python/ferrocade/*.so
+
+# Web build output
+web/dist/
+web/pkg/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Claude Code local (personal) settings
+.claude/settings.local.json
