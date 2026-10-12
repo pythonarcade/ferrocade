@@ -41,7 +41,7 @@ gfx-rs/wgpu#10274 failure.
 | W1 | Report completeness | Read `docs/research/web-spike.md` | A, A′, B, and C each have a status plus evidence or a reason. There's a single **Proposed** recommendation, risks, and next steps. | US1, FR-001–004, FR-013, SC-001/002 |
 | W2 | Ship in the browser (WebGPU) | Open `/web/` in Edge or Chrome | The loading states show, then a dark gray canvas with the ship centered and crisp. The console logs `backend=…` and the ship-visible time. | US2, FR-005–007, SC-003 |
 | W3 | WebGL2 fallback | Open `/web/?backend=webgl2` | Same image, and the console shows the GL backend. | FR-009 |
-| W4 | Centering pixel check | Loader diagnostics call `engine.readPixels()` and log the bounding box | Centered within 1 px at 99×75. | SC-003 |
+| W4 | Centering pixel check | Open with `?diagnostics=1`; the loader reads the canvas pixels after the first frame and logs the bounding box | Centered within 1 px at 99×75. | SC-003 |
 | W5 | Unchanged example | `git diff --no-index` of the example the loader runs against `examples/01_centered_ship.py` | 0 lines (≤ 5 allowed, each justified). | SC-004, FR-008 |
 | W6 | Load time | DevTools with cache disabled, then enabled; 3 runs each | Median cold ≤ 30 s and warm ≤ 10 s, or recorded as a finding. | SC-005, FR-009 |
 | W7 | Download size | DevTools Network panel, cold | Runtime, engine, and asset bytes recorded. | FR-009 |

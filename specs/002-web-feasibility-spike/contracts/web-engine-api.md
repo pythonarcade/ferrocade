@@ -67,10 +67,13 @@ class Engine {
   remove(list: number, sprite: number): void;   // throws "not in this sprite list"
   drawList(list: number): void;                 // only between beginFrame/endFrame
 
-  /** Spike diagnostics: canvas pixels, for the centering check. */
-  readPixels(): Promise<Uint8Array>;
 }
 ```
+
+**Centering diagnostics** are done in the loader, not in `Engine`. Right after the first frame,
+in the same task, the loader copies the game canvas into a 2D canvas, reads its pixels, and
+logs the ship's bounding box (`?diagnostics=1`). This avoids special surface usage flags in the
+renderer.
 
 **Error contract**: engine errors become JS `Error`s with the same messages as desktop (e.g.
 `"draw() can only be called inside on_draw()"`). The shim converts them to the same Python
