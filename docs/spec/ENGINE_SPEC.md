@@ -428,7 +428,7 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 - **Goal:** detect collisions between the ship and other sprites (e.g. asteroids or walls).
 - **Proves:** a Rust collision system that is fast enough for the Phase 3 sprite counts.
 - **Requirement:** all collision detection runs in **Rust**. Python only receives results.
-- **Design:** open, needs research. See §11. The architecture must be decided before or as part of this phase (owner, 2026-10-12).
+- **Design:** architecture decided (§11, `docs/design/collision.md`); the API details are settled in the Phase 5 spec.
 - **Done when:** the ship collides correctly with many objects, and collision checks for Phase 3-scale lists fit within the frame budget.
 
 ### Milestone: Performance showcase demo (after Phase 5)
@@ -443,7 +443,7 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 - **Builds on:** Phase 1c (walls and balls as shapes), Phase 2 (velocities, `SpriteList.update()`), Phase 3 (stress-test scenes, frame-time readout), and Phase 5 (Rust collision detection).
 - **Needs beyond the current phases** (to decide when the demo is specified):
   - **Collision response:** "bouncing off each other" needs more than detection, namely reflecting or exchanging velocities on contact. Phase 5 is detect-only, and physics response is in the backlog.
-    - **Owner direction:** Python manages collisions (e.g. through `on_collision`-style events or a function returning colliding sprites), while Rust does the time-expensive parts: movement and detection. See the §11 question 6 options (Proposed: Rust built-in bounce plus batched enter/exit events to Python).
+    - **Owner direction:** Python manages collisions, while Rust does the time-expensive parts: movement and detection. Phase 5 delivers batched queries (§11). **Ideas for the showcase** (not committed): batched enter/exit events and built-in Rust responses (bounce, stop, solid walls).
     - **Demo idea:** a toggle between "bounce handled in Rust" and "bounce handled in Python from the collision results", so the frame-time difference shows the value of the hybrid design.
   - **Timing breakdown API:** engine-side per-frame timings for render, update, and collision. `FrameStats` from Phase 1c is a start.
   - **On-screen display of the numbers:** the title bar or console until text rendering exists, then an overlay.
@@ -454,9 +454,19 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 ### Later phases (unordered)
 - Sound, text rendering, sprite sheets/animation, views/scenes, camera, a physics response (bouncing off, pushing), and mouse/gamepad input.
 
-## 11. Collision System (Open Design)
+## 11. Collision System
 
-*(Not decided. Owner direction, 2026-10-12: the collision architecture must be decided **before Phase 5 or as part of Phase 5**, at the latest during Phase 5's spec and plan.)*
+*(Architecture decided by the owner, 2026-10-12. Full design: `docs/design/collision.md`. API details are Proposed until the Phase 5 spec.)*
+
+### Decided architecture (2026-10-12)
+1. **Colliders are separate entities** (Unity/Godot style), attached to sprites and following their transform; not a built-in property of `Sprite`.
+2. **Shapes:** start with **circle, axis-aligned box, and rotated box**. The design must stay expandable (shape enum + pair tests, with a generic convex fallback) so convex polygons, auto hit boxes from texture alpha, capsules, and pixel masks can be added later.
+3. **What is checked:** **list-based queries** (Arcade style). Declared pairs checked automatically every frame are in the backlog.
+4. **Results to Python:** **batched queries** first. Enter/exit events and built-in Rust responses (bounce/stop/solid) are ideas for the showcase, not committed.
+5. **Broad phase:** a **spatial hash grid per list**, rebuilt only when the list's positions changed (reusing dirty tracking); very small lists test every pair.
+6. **Implementation:** **written from scratch** (no `parry2d`/`rapier2d`).
+
+The sections below are the original research and options, kept for reference.
 
 ### Requirements so far
 - Implemented in Rust, with no per-object Python work during collision checks.
@@ -519,6 +529,8 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 - [ ] Physics response (after the collision system, §11)
 - [ ] Angle-to-velocity helper: set a sprite's velocity from a heading (degrees, counter-clockwise) and a speed, so users rarely need `math.radians`/`cos`/`sin` (e.g. something like `sprite.set_velocity_from_angle(angle, speed)`; the exact API is TBD)
 - [ ] Shapes/primitives drawing
+- [ ] Collision: declared collision pairs checked automatically every frame (e.g. `collisions.watch(bullets, asteroids)`); needed for engine-driven events and responses (§11)
+- [ ] Collision shapes beyond Phase 5: convex polygon, auto hit box from texture alpha, capsule, pixel mask (§11)
 - [ ] `Window.close()`: close the window from game code (e.g. quit on Escape); left out of Phase 4
 - [ ] GPU selection setting: let a game opt into the low-power GPU (the high-performance default is decided, §4); add only when needed
 - [ ] Benchmarks: a vsync-off mode for raw FPS, and a higher ramp cap or time-boxed search, so discrete-GPU limits can be found
@@ -614,6 +626,7 @@ ferrocade/                 # repo root
 | 2026-10-12 | Phase 4 key names: `KEY_0`–`KEY_9`, `NUM_*`, `PAGE_UP`/`PAGE_DOWN`, `BRACKET_LEFT`/`BRACKET_RIGHT`, `LSYSTEM`/`RSYSTEM` and `MOD_SYSTEM` | Owner confirmed at Phase 4 planning; §5 |
 | 2026-10-12 | Key modifiers report the keys held after the event; no `Window.close()` / Escape-to-quit in Phase 4 | Owner confirmed at Phase 4 planning; `Window.close()` added to the backlog |
 | 2026-10-12 | Keyboard behavior: physical keys, auto-repeat ignored, focus loss releases held keys, events delivered once per frame before `on_update` | Phase 4 spec defaults; the owner reviewed the spec and plan without changes; §5 |
+| 2026-10-12 | Collision architecture: separate collider entities; circle, axis-aligned box, rotated box first (expandable); list-based queries; batched query results first; spatial hash grid per list; written from scratch | Owner decisions on §11 questions 1–6; `docs/design/collision.md`. Declared pairs → backlog; enter/exit events and built-in responses → showcase ideas |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
 | 2026-10-12 | Collision detection implemented in Rust | Design open (§11) |
 | 2026-10-12 | winit for windowing | Confirmed |
