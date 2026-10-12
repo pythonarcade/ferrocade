@@ -359,6 +359,9 @@ async fn request_adapter(
 ) -> Result<wgpu::Adapter> {
     instance
         .request_adapter(&wgpu::RequestAdapterOptions {
+            // Prefer the discrete GPU on dual-GPU machines (owner decision, Phase 3). The
+            // default picked the integrated GPU and capped GPU-bound scenes ~5x lower.
+            power_preference: wgpu::PowerPreference::HighPerformance,
             compatible_surface: surface,
             ..Default::default()
         })

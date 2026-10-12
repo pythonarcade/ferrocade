@@ -65,10 +65,10 @@ A temporary experiment with `PowerPreference::HighPerformance` selected the **NV
 static and engine_moved then both reached the 512k ramp cap. The new `Renderer::adapter_name()`
 diagnostic shows which GPU is in use.
 
-**This is an owner decision** (engine spec, constitution V). The default was left unchanged. The options:
-- **(A)** Prefer the high-performance GPU by default (most game engines do this).
-- **(B)** Keep the low-power default and add an opt-in.
-- **(C)** Expose a setting with a recommended default.
+**Decision (owner, 2026-10-12): option A.** Ferrocade now prefers the high-performance GPU by default
+(`PowerPreference::HighPerformance`). The other options were (B) keeping the low-power default with an
+opt-in, and (C) a setting with a recommended default. The results table above was measured before
+this change; the NVIDIA column shows the new default's behavior on this machine.
 
 ## Fairness notes
 
@@ -95,8 +95,7 @@ in this phase. A web variant of `python_moved` remains a follow-up (web spike ri
 
 ## Recommendations
 
-1. **Decide the GPU preference default** (see the finding above). It's the largest single
-   performance lever found.
+1. ~~Decide the GPU preference default.~~ Done: high-performance GPU by default (see the finding above).
 2. **For the showcase:** movement and detection in the engine (as decided). The 75× update gap and
    the 0.25–0.67 µs per-sprite Python costs show that per-sprite Python callbacks must be avoided
    for thousands of objects.

@@ -198,6 +198,8 @@ Game().run()
 | Web | Required | WebGPU | WebGL2 |
 | Linux | Unofficial (likely works for free) | Vulkan | OpenGL |
 
+**GPU selection (decided 2026-10-12):** prefer the high-performance (discrete) GPU on machines with more than one. On a dual-GPU laptop, the default choice was the integrated GPU, which cut the GPU-bound Phase 3 scenes by about 5× (`docs/research/phase3-benchmarks.md`). On the web, this is only a hint to the browser.
+
 ### v1 rendering approach (2D)
 - One textured-quad pipeline written in WGSL.
 - Per-sprite instance data: position, size, rotation, and texture region.
@@ -394,7 +396,7 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 - **Done when:** the speed is identical at different monitor refresh rates (e.g. 60 Hz vs. 144 Hz, or vsync off), and the motion is smooth.
 
 ### Phase 3: Sprite stress test (performance)
-- **Status (2026-10-12): implemented; target met.** See `docs/research/phase3-benchmarks.md`. Maximum engine-moved sprites at 60 FPS: **100,000** on the default (integrated Intel) GPU, and ≥ 512,000 on the NVIDIA GPU (temporary experiment). For comparison: Arcade 4.0.0.dev8 reached 8,000 and pygame-ce 16,500. Delivered: `benches/stress.py` (one process per engine/scene), `Window.frame_stats`, and `Window.show_fps` (title-bar readout). No optimization was needed. **Open (owner decision): which GPU to prefer by default** (wgpu picked the low-power integrated GPU).
+- **Status (2026-10-12): implemented; target met.** See `docs/research/phase3-benchmarks.md`. Maximum engine-moved sprites at 60 FPS: **100,000** on the default (integrated Intel) GPU, and ≥ 512,000 on the NVIDIA GPU (temporary experiment). For comparison: Arcade 4.0.0.dev8 reached 8,000 and pygame-ce 16,500. Delivered: `benches/stress.py` (one process per engine/scene), `Window.frame_stats`, and `Window.show_fps` (title-bar readout). No optimization was needed. Follow-up: Ferrocade now prefers the high-performance GPU (§4).
 - **Goal:** draw and move a large number of sprites at a steady frame rate.
 - **Proves:** batching, GPU-layout buffers, and minimal conversion (§7) actually pay off.
 - **Delivers:** an FPS / frame-time readout (console or title bar until text rendering exists), and the benchmark scenes from §7.
@@ -507,7 +509,7 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 - [ ] Physics response (after the collision system, §11)
 - [ ] Angle-to-velocity helper: set a sprite's velocity from a heading (degrees, counter-clockwise) and a speed, so users rarely need `math.radians`/`cos`/`sin` (e.g. something like `sprite.set_velocity_from_angle(angle, speed)`; the exact API is TBD)
 - [ ] Shapes/primitives drawing
-- [ ] GPU selection: decide the default power preference (high-performance vs. low-power), and possibly a setting (*Proposed*, found in Phase 3; `docs/research/phase3-benchmarks.md`)
+- [ ] GPU selection setting: let a game opt into the low-power GPU (the high-performance default is decided, §4); add only when needed
 - [ ] Benchmarks: a vsync-off mode for raw FPS, and a higher ramp cap or time-boxed search, so discrete-GPU limits can be found
 - [ ] Web stress measurement: a browser variant of the `python_moved` scene (Pyodide → JS → WASM call cost)
 - [ ] Build/packaging/distribution (wheels via maturin)
@@ -596,6 +598,7 @@ ferrocade/                 # repo root
 | 2026-10-12 | Collision direction: Rust does movement and detection, Python manages collisions (game logic) | Owner direction; delivery mechanism Proposed (§11 Q6: built-in Rust responses plus batched enter/exit events plus queries) |
 | 2026-10-12 | Phase 3 implemented: target met (100,000 engine-moved sprites at 60 FPS on the integrated GPU; Arcade 4.0.0.dev8 8,000; pygame-ce 16,500); no optimization needed | `docs/research/phase3-benchmarks.md` |
 | 2026-10-12 | Phase 3 benchmark method: sustainable = FPS ≥ 59 and per-frame work < 14 ms; each engine/scene in its own process; Arcade paced with vsync and 1/240 rates, Pygame with `Clock.tick(60)` and no spin | Deviations from the plan, needed for fair Windows pacing; see the fairness notes in the report |
+| 2026-10-12 | Prefer the high-performance (discrete) GPU by default (wgpu `PowerPreference::HighPerformance`) | Owner chose option A after the Phase 3 finding; §4 |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
 | 2026-10-12 | Collision detection implemented in Rust | Design open (§11) |
 | 2026-10-12 | winit for windowing | Confirmed |
