@@ -44,3 +44,6 @@ tools/web-check/out/
 
 # Benchmark results (summaries go in docs/research/)
 benches/results/
+
+# Static site assembled by tools/build_site.py (published by GitHub Pages)
+_site/

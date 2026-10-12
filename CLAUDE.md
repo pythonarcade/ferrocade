@@ -50,4 +50,7 @@ rustup target add wasm32-unknown-unknown; cargo install wasm-bindgen-cli --versi
 tools\build_web.ps1 -Serve       # build web\pkg and serve the repo root on :8000; open http://localhost:8000/web/
 cd tools\web-check; npm install; node check.mjs "http://localhost:8000/web/?diagnostics=1"   # headless check
 ```
-`wasm-bindgen-cli` must match the `wasm-bindgen` version in `Cargo.lock`. Findings and status are in `docs/research/web-spike.md`.
+`wasm-bindgen-cli` must match the `wasm-bindgen` version in `Cargo.lock`.
+
+### Published examples (GitHub Pages)
+`.github/workflows/pages.yml` builds the browser engine and publishes `_site/` (assembled by `python tools/build_site.py`) on every push to `main`. Preview locally: build `web/pkg`, run `python tools/build_site.py`, then `python -m http.server 8000 --directory _site`. New examples must be added to `EXAMPLES` in `tools/build_site.py`. Findings and status are in `docs/research/web-spike.md`.
