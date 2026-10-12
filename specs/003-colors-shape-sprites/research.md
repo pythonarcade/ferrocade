@@ -77,6 +77,8 @@ CSS engine is far more trustworthy than a second hand-typed table.
   - With `NEAREST`, circles drawn up to 512 px across look crisp and stepped, and larger ones show
     texel steps, which suits pixel art. With `LINEAR`, they're smooth at any reasonable size.
 
+**Implementation update (2026-10-12):** the atlas is **mipmapped** (6 levels), and the disc is radius 200 centered at (768,256), leaving a gap from the white half; `CIRCLE_UV` covers just the disc. Without mips, `LINEAR` circles drawn smaller than the disc came out jagged. See `docs/research/phase1c-validation.md`.
+
 **Rationale**: maximum batching with no new pipeline, and the existing texture, cache, and
 bind-group machinery is reused.
 

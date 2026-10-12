@@ -56,16 +56,18 @@ await new Promise((r) => setTimeout(r, 1000)); // let a few more frames render
 const shot = path.join(outDir, `${browserName}-${new URL(url).search.replace(/\W+/g, "_") || "default"}.png`);
 await page.screenshot({ path: shot });
 const exampleUnchanged = await page.evaluate(async () => {
-  const original = await (await fetch("../examples/01_centered_ship.py", { cache: "no-store" })).text();
+  const name = new URLSearchParams(location.search).get("example") ?? "01_centered_ship";
+  const original = await (await fetch(`../examples/${name}.py`, { cache: "no-store" })).text();
   return window.ferrocadeExampleSource === original;
 });
 const errorText = await page.$eval("#error", (e) => e.textContent);
+const drawCalls = await page.evaluate(() => window.ferrocadeEngine?.draw_calls?.() ?? null);
 
 const pick = (prefix) => console_.find((l) => l.includes(prefix)) ?? null;
 const summary = {
   url, browser: browserName, outcome,
   backend: pick("backend="), timeToShip: pick("ship-visible"), centering: pick("centering"),
-  exampleUnchanged, bytes, errorText: errorText || null, screenshot: shot,
+  exampleUnchanged, drawCalls, bytes, errorText: errorText || null, screenshot: shot,
   console: console_.slice(0, 40),
 };
 console.log(JSON.stringify(summary, null, 2));

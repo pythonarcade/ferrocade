@@ -370,6 +370,7 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 - Quick macOS check here too, if hardware is available.
 
 ### Phase 1c: Colors and shape sprites
+- **Status (2026-10-12): implemented** on desktop and web. See `docs/research/phase1c-validation.md` (1,000 mixed shapes = 1 draw call; all 148 colors verified against Chrome).
 - **Goal:** CSS named colors in `fc.color`, and solid-color rectangle and circle sprites that need no image (see §3 "Colors" and "Shape sprites").
 - **Proves:** per-sprite tint in the instance data (still 48 bytes, dirty-tracked), shared built-in textures, and batching across shapes.
 - **Delivers:**
@@ -580,6 +581,7 @@ ferrocade/                 # repo root
 | 2026-10-12 | Shape API: `fc.RectangleSprite` / `fc.CircleSprite` classes (extend `Sprite`) | Chosen over factory functions and built-in textures, because it suits subclassing |
 | 2026-10-12 | Circle edges follow the window filter, with a per-circle `filter=` override | Consistent with "no hidden default filter" |
 | 2026-10-12 | Add a performance showcase milestone after Phase 5: walls plus many bouncing sprites, showing render, move, and collision speed | Owner request; collision response and timing display to be decided (§10) |
+| 2026-10-12 | Built-in shape atlas is mipmapped (6 levels) and the disc is kept clear of the white half | Needed so `LINEAR` circles stay smooth when drawn small; found by Phase 1c tests |
 | 2026-10-12 | Collision direction: Rust does movement and detection, Python manages collisions (game logic) | Owner direction; delivery mechanism Proposed (§11 Q6: built-in Rust responses plus batched enter/exit events plus queries) |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
 | 2026-10-12 | Collision detection implemented in Rust | Design open (§11) |

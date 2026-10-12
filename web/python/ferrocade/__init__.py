@@ -23,7 +23,9 @@ __version__ = "0.1.0-web-spike"
 __all__ = [
     "LINEAR",
     "NEAREST",
+    "CircleSprite",
     "Filter",
+    "RectangleSprite",
     "Sprite",
     "SpriteList",
     "Texture",
@@ -204,17 +206,102 @@ class Sprite:
         raise NotImplementedError("changing a sprite's texture is not available in the web spike")
 
     @property
+    def color(self):
+        return tuple(int(c) for c in _call(_engine.get_color, self._id))
+
+    @color.setter
+    def color(self, value):
+        r, g, b, a = _rgba(value)
+        _call(_engine.set_color, self._id, r, g, b, a)
+
+    def _base_size(self):
+        return (self._texture.width, self._texture.height)
+
+    @property
     def width(self):
-        return self._texture.width * abs(self.scale)
+        return self._base_size()[0] * abs(self.scale)
 
     @property
     def height(self):
-        return self._texture.height * abs(self.scale)
+        return self._base_size()[1] * abs(self.scale)
 
     def __del__(self):
         engine_id = getattr(self, "_id", None)
         if engine_id is not None:
             _engine.destroy_sprite(engine_id)
+
+
+def _rgba(value):
+    rgba = tuple(value)
+    if len(rgba) not in (3, 4):
+        raise ValueError(f"color must have 3 or 4 components (RGB or RGBA), got {len(rgba)}")
+    if not all(isinstance(c, int) and 0 <= c <= 255 for c in rgba):
+        raise ValueError(f"color components must be 0-255, got {rgba}")
+    return rgba if len(rgba) == 4 else (*rgba, 255)
+
+
+def _check_size(name, value):
+    value = float(value)
+    if not (value > 0 and value != float("inf")):  # also rejects NaN
+        raise ValueError(f"shape {name} must be a finite number > 0, got {value}")
+    return value
+
+
+class _BuiltinShapes:
+    """Stands in for the built-in shape texture (path reported like desktop)."""
+
+    path = "<builtin:shapes>"
+    filter = None
+
+
+class RectangleSprite(Sprite):
+    """A solid-color rectangle; no image needed."""
+
+    def __init__(self, width, height, color, center_x=0.0, center_y=0.0):
+        self._size = (_check_size("width", width), _check_size("height", height))
+        r, g, b, a = _rgba(color)
+        self._texture = _BuiltinShapes()
+        self._id = _call(_engine.create_shape_sprite, "rectangle", self._size[0], self._size[1],
+                         "", float(center_x), float(center_y), r, g, b, a)
+
+    def _base_size(self):
+        return self._size
+
+    @property
+    def texture(self):
+        return self._texture
+
+    @texture.setter
+    def texture(self, value):
+        raise TypeError("shape sprites use a built-in texture; it can't be replaced")
+
+
+class CircleSprite(Sprite):
+    """A solid-color circle; its edge follows the window filter unless `filter` overrides it."""
+
+    def __init__(self, radius, color, center_x=0.0, center_y=0.0, *, filter=None):
+        filter_name = _check_filter(filter, allow_none=True)
+        diameter = 2 * _check_size("radius", radius)
+        self._size = (diameter, diameter)
+        r, g, b, a = _rgba(color)
+        self._texture = _BuiltinShapes()
+        self._id = _call(_engine.create_shape_sprite, "circle", diameter, diameter,
+                         filter_name, float(center_x), float(center_y), r, g, b, a)
+
+    def _base_size(self):
+        return self._size
+
+    @property
+    def radius(self):
+        return self._size[0] / 2 * abs(self.scale)
+
+    @property
+    def texture(self):
+        return self._texture
+
+    @texture.setter
+    def texture(self, value):
+        raise TypeError("shape sprites use a built-in texture; it can't be replaced")
 
 
 class SpriteList:

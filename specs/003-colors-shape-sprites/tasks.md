@@ -135,13 +135,13 @@ US2 and US3 use it.
   - `#[pyclass(extends = PySprite, subclass, name = "CircleSprite")]` with `__init__(self_, radius, color, center_x=0.0, center_y=0.0, *, filter: Option<PyFilter>=None)` and a read-only `radius` getter (`base radius × |scale|`).
   - Register both in `crates/ferrocade-py/src/lib.rs`.
 - [X] T021 [US2] Export `RectangleSprite` and `CircleSprite` in `python/ferrocade/__init__.py`. Add their stubs (signatures exactly per contracts/python-api.md) to `python/ferrocade/_ferrocade.pyi`.
-- [ ] T022 [US2] Create `examples/01c_shapes.py`, following the contract sketch (a rectangle, a `NEAREST` circle, a `LINEAR`-override circle, all in named colors; the tinted ship is added in T030).
+- [X] T022 [US2] Create `examples/01c_shapes.py`, following the contract sketch (a rectangle, a `NEAREST` circle, a `LINEAR`-override circle, all in named colors; the tinted ship is added in T030).
   - With `--many`: 1,000 random shapes (mixed rectangles and circles, sizes 4–24, random CSS colors).
   - Print the average frame time to the console every 2 s (`time.perf_counter` in `on_draw`).
-- [ ] T023 [US2] Add to `crates/ferrocade-web/src/lib.rs`: `create_shape_sprite(kind: &str /* "rectangle" | "circle" */, width, height, filter: &str, center_x, center_y, r, g, b, a) -> u32`, using `create_rectangle` or `create_circle`. Also add `draw_calls()`, which returns `last_frame_stats().draw_calls` (for the browser check).
-- [ ] T024 [US2] Add `RectangleSprite(Sprite)` and `CircleSprite(Sprite)` to `web/python/ferrocade/__init__.py`, with the same signatures and validation as desktop (`ValueError`/`TypeError`). They're created through `create_shape_sprite`, and `CircleSprite` has `radius`.
-- [ ] T025 [US2] Add `?example=<name>` to `web/loader.js` (default `01_centered_ship`). It fetches `../examples/<name>.py` and accepts only `[A-Za-z0-9_]` names. Keep `ferrocadeExampleSource` for the unchanged-source check.
-- [ ] T026 [US2] Run T014–T016, `maturin develop`, `python examples/01c_shapes.py` (and `--many`, noting the frame times), and `tools\build_web.ps1`. Run `node tools/web-check/check.mjs "http://localhost:8000/web/?example=01c_shapes"` and compare its screenshot with a desktop screenshot of the same example (Q4, Q6, Q7).
+- [X] T023 [US2] Add to `crates/ferrocade-web/src/lib.rs`: `create_shape_sprite(kind: &str /* "rectangle" | "circle" */, width, height, filter: &str, center_x, center_y, r, g, b, a) -> u32`, using `create_rectangle` or `create_circle`. Also add `draw_calls()`, which returns `last_frame_stats().draw_calls` (for the browser check).
+- [X] T024 [US2] Add `RectangleSprite(Sprite)` and `CircleSprite(Sprite)` to `web/python/ferrocade/__init__.py`, with the same signatures and validation as desktop (`ValueError`/`TypeError`). They're created through `create_shape_sprite`, and `CircleSprite` has `radius`.
+- [X] T025 [US2] Add `?example=<name>` to `web/loader.js` (default `01_centered_ship`). It fetches `../examples/<name>.py` and accepts only `[A-Za-z0-9_]` names. Keep `ferrocadeExampleSource` for the unchanged-source check.
+- [X] T026 [US2] Run T014–T016, `maturin develop`, `python examples/01c_shapes.py` (and `--many`, noting the frame times), and `tools\build_web.ps1`. Run `node tools/web-check/check.mjs "http://localhost:8000/web/?example=01c_shapes"` and compare its screenshot with a desktop screenshot of the same example (Q4, Q6, Q7).
 
 **Checkpoint**: US2 is complete. Shapes draw on desktop and web in one batch.
 
@@ -164,8 +164,8 @@ US2 and US3 use it.
   - `ValueError` for a 2-tuple, `(256, 0, 0)`, or `(-1, 0, 0)`
   - a shape's `color` can be changed after creation
 - [X] T029 [US3] Add the `color` getter (returns a 4-tuple) and setter (accepts a 3- or 4-sequence, via `color::parse_rgba`, then `store::set_color`) to `crates/ferrocade-py/src/py_sprite.rs`. Add it to the `Sprite` stub in `python/ferrocade/_ferrocade.pyi`.
-- [ ] T030 [US3] Add the web side: `set_color(sprite, r, g, b, a)` and `get_color(sprite) -> Vec<u8>` in `crates/ferrocade-web/src/lib.rs`, and the `color` property in `web/python/ferrocade/__init__.py`. Update `examples/01c_shapes.py` to add the ship tinted with `fc.color.LIGHT_PINK` (FR-015).
-- [ ] T031 [US3] Run T027 and T028, rerun `python examples/01c_shapes.py`, and run the browser check on `?example=01c_shapes`. The ship should be tinted on both.
+- [X] T030 [US3] Add the web side: `set_color(sprite, r, g, b, a)` and `get_color(sprite) -> Vec<u8>` in `crates/ferrocade-web/src/lib.rs`, and the `color` property in `web/python/ferrocade/__init__.py`. Update `examples/01c_shapes.py` to add the ship tinted with `fc.color.LIGHT_PINK` (FR-015).
+- [X] T031 [US3] Run T027 and T028, rerun `python examples/01c_shapes.py`, and run the browser check on `?example=01c_shapes`. The ship should be tinted on both.
 
 **Checkpoint**: all three stories are complete.
 
@@ -173,7 +173,7 @@ US2 and US3 use it.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T032 Full regression and lint:
+- [X] T032 Full regression and lint:
   - `cargo fmt --all`
   - `cargo clippy --workspace --all-targets -- -D warnings`
   - `cargo clippy -p ferrocade --no-default-features --all-targets -- -D warnings`
@@ -181,8 +181,8 @@ US2 and US3 use it.
   - `cargo test --workspace`, `maturin develop`, `pytest`
   - `python examples/01_centered_ship.py` (Q5: unchanged)
   - the web check on the default example (unchanged)
-- [ ] T033 [P] Check `python/ferrocade/_ferrocade.pyi` against the runtime (no missing or extra names, the same comparison as Phase 1's T055) and against contracts/python-api.md.
-- [ ] T034 Record Q1–Q7 results (including frame times, draw-call counts, and the Chrome color check) in `docs/research/phase1c-validation.md`, and link it from `docs/research/README.md`. Mark Phase 1c implemented in `docs/spec/ENGINE_SPEC.md` §10, with decision log entries for any deviations from the plan (for example, the R5 outcome).
+- [X] T033 [P] Check `python/ferrocade/_ferrocade.pyi` against the runtime (no missing or extra names, the same comparison as Phase 1's T055) and against contracts/python-api.md.
+- [X] T034 Record Q1–Q7 results (including frame times, draw-call counts, and the Chrome color check) in `docs/research/phase1c-validation.md`, and link it from `docs/research/README.md`. Mark Phase 1c implemented in `docs/spec/ENGINE_SPEC.md` §10, with decision log entries for any deviations from the plan (for example, the R5 outcome).
 
 ---
 

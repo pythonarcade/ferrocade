@@ -8,6 +8,9 @@ const PYODIDE_VERSION = "314.0.7";
 const params = new URLSearchParams(location.search);
 const backend = params.get("backend") ?? "auto";
 const diagnostics = params.has("diagnostics");
+// Which example to run (letters, digits, underscore only).
+const example = /^[A-Za-z0-9_]+$/.test(params.get("example") ?? "")
+  ? params.get("example") : "01_centered_ship";
 const statusEl = document.getElementById("status");
 const errorEl = document.getElementById("error");
 const canvas = document.getElementById("game");
@@ -104,10 +107,10 @@ async function main() {
   writeFile(pyodide, "/home/pyodide/ferrocade/color.py",
             await fetchBytes("../python/ferrocade/color.py"));
 
-  const source = new TextDecoder().decode(await fetchBytes("../examples/01_centered_ship.py"));
+  const source = new TextDecoder().decode(await fetchBytes(`../examples/${example}.py`));
   window.ferrocadeExampleSource = source; // lets the check script verify it is unchanged (W5)
   try {
-    await pyodide.runPythonAsync(source, { filename: "examples/01_centered_ship.py" });
+    await pyodide.runPythonAsync(source, { filename: `examples/${example}.py` });
   } catch (err) {
     showError(String(err));
   }

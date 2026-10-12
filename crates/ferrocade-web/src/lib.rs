@@ -205,6 +205,56 @@ impl Engine {
         Ok((self.sprites.len() - 1) as u32)
     }
 
+    /// Create a solid rectangle or circle (`kind`); `width`/`height` are the size (a circle
+    /// uses `width` as its diameter). `filter` overrides the window filter for circles.
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_shape_sprite(
+        &mut self,
+        kind: &str,
+        width: f64,
+        height: f64,
+        filter: &str,
+        center_x: f64,
+        center_y: f64,
+        r: i32,
+        g: i32,
+        b: i32,
+        a: i32,
+    ) -> Result<u32, JsError> {
+        let rgba = color::parse_rgba(&[r as i64, g as i64, b as i64, a as i64]).map_err(js_err)?;
+        let mut store = store::global();
+        let id = match kind {
+            "rectangle" => store.create_rectangle(width, height, rgba, center_x, center_y),
+            "circle" => {
+                store.create_circle(width / 2.0, rgba, center_x, center_y, parse_filter(filter)?)
+            }
+            other => return Err(JsError::new(&format!("unknown shape {other:?}"))),
+        }
+        .map_err(js_err)?;
+        drop(store);
+        self.sprites.push(Some(id));
+        Ok((self.sprites.len() - 1) as u32)
+    }
+
+    /// `[r, g, b, a]` tint of a sprite.
+    pub fn get_color(&self, sprite: u32) -> Result<Vec<u8>, JsError> {
+        let id = self.sprite(sprite)?;
+        let store = store::global();
+        Ok(store.sprite(id).map_err(js_err)?.color.to_vec())
+    }
+
+    pub fn set_color(&self, sprite: u32, r: i32, g: i32, b: i32, a: i32) -> Result<(), JsError> {
+        let rgba = color::parse_rgba(&[r as i64, g as i64, b as i64, a as i64]).map_err(js_err)?;
+        store::global()
+            .set_color(self.sprite(sprite)?, rgba)
+            .map_err(js_err)
+    }
+
+    /// Draw calls in the most recent frame (for the browser checks).
+    pub fn draw_calls(&self) -> u32 {
+        self.renderer.last_frame_stats().draw_calls
+    }
+
     pub fn destroy_sprite(&mut self, sprite: u32) {
         if let Some(slot) = self.sprites.get_mut(sprite as usize)
             && let Some(id) = slot.take()

@@ -301,7 +301,7 @@ fn rectangle_has_exact_size_and_color() {
     let pixels = draw(&mut renderer, &mut store, list);
     let (x0, y0, x1, y1) = bounding_box(&pixels).unwrap();
     assert_eq!((x1 - x0 + 1, y1 - y0 + 1), (50, 20));
-    assert_eq!(((x0 + x1 + 1) / 2, (y0 + y1 + 1) / 2), (100, 100));
+    assert_eq!(((x0 + x1).div_ceil(2), (y0 + y1).div_ceil(2)), (100, 100));
     for (x, y) in [(76, 91), (100, 100), (124, 109)] {
         assert_eq!(pixel(&pixels, x, y), [255, 0, 0], "at {x},{y}");
     }
