@@ -112,6 +112,29 @@ We compared the class structure of other engines:
 - The filter is a sampler choice, not part of the image data, so overriding it never reloads the file.
 - Design details: `specs/001-centered-ship/research.md` R11.
 
+### Colors (decided)
+- **`fc.color` provides every CSS named color** (CSS Color Module Level 4: the 148 named colors, plus `TRANSPARENT`). The values match CSS exactly, so web color references work as-is.
+- **Naming:** `UPPER_SNAKE` versions of the CSS keywords, e.g. `CORNFLOWER_BLUE` (100, 149, 237), `DARK_SLATE_GRAY` (47, 79, 79), `REBECCA_PURPLE` (102, 51, 153). CSS's `gray`/`grey` spelling pairs are both included, as in CSS.
+- **CSS wins on conflicts:** `GREEN` is (0, 128, 0) (use `LIME` for (0, 255, 0)), and `DARK_GRAY` is (169, 169, 169).
+- **Non-CSS engine colors** are named separately. The default clear color (32, 32, 32) becomes **`DEFAULT_BACKGROUND`**.
+  - *This replaces the Phase 1 constants `GREEN = (0, 255, 0)` and `DARK_GRAY = (32, 32, 32)`.*
+- **Format:** RGB tuples of 0-255 integers, as today (`TRANSPARENT` is RGBA `(0, 0, 0, 0)`). Any 3- or 4-tuple is still accepted wherever a color goes.
+- The desktop and web packages share one generated or copied list. That's part of the web "required before shipping" item to share `color.py`.
+
+### Shape sprites (decided): solid-color rectangles and circles without images
+- **Requirement:** create sprites that are solid-color **rectangles** or **circles** of any size, with no image file needed. They behave like any other sprite: position, scale, sprite lists, batching, and collisions later.
+- **Design: tinted shared textures.**
+  - Each sprite gets a **`color`** (tint, RGBA) that's multiplied with its texture in the shader. **Default: white (255, 255, 255, 255), which means unchanged**, so existing image sprites look the same.
+    - The tint is stored in the GPU instance's existing padding as 4 normalized bytes (`Unorm8x4`), so the instance stays **48 bytes** (constitution II).
+    - Like every sprite property, it lives in the Rust store and changing it marks just that slot dirty.
+  - **Rectangles** share one small built-in **white texture**, and the sprite's size comes from width × height.
+  - **Circles** share one built-in **white circle texture** (high resolution, anti-aliased edge), drawn at diameter × diameter.
+  - Because shapes of any size or color reuse the same textures, **they batch into the same draw calls** as each other.
+- **Side benefit:** `sprite.color` also tints and fades image sprites (for example, a damage flash, or alpha fade-out).
+- **API: *Proposed*, to finalize in the Phase 1c spec.** Factory functions that return ordinary `Sprite`s, e.g. `fc.Sprite.rectangle(width, height, color, center_x=0, center_y=0)` and `fc.Sprite.circle(radius, color, center_x=0, center_y=0)`, plus a `sprite.color` property. Still to work out:
+  - how subclasses (`class Wall(fc.Sprite)`) create shape sprites
+  - whether a circle's smooth edge should ignore the window's `NEAREST` filter (for example, a built-in `LINEAR` override on the circle texture)
+
 ### Coordinate system (decided)
 - The origin `(0, 0)` is the **bottom-left** corner of the window, with **y going up** (same as Arcade and OpenGL).
 - Units are pixels. `center_x`/`center_y` give the sprite's center point.
@@ -344,6 +367,21 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 - **Done when:** the centered ship renders in a browser, or the spike documents why the approach fails and which option to try next.
 - Quick macOS check here too, if hardware is available.
 
+### Phase 1c: Colors and shape sprites
+- **Goal:** CSS named colors in `fc.color`, and solid-color rectangle and circle sprites that need no image (see §3 "Colors" and "Shape sprites").
+- **Proves:** per-sprite tint in the instance data (still 48 bytes, dirty-tracked), shared built-in textures, and batching across shapes.
+- **Delivers:**
+  - the full CSS color set, plus `DEFAULT_BACKGROUND`
+  - `sprite.color`
+  - rectangle and circle sprite creation
+  - the same API in the web shim
+  - an example, `examples/01c_shapes.py`
+- **Done when:**
+  - the example shows several rectangles and circles of different sizes and colors, drawn in few draw calls
+  - an image sprite with the default color looks unchanged (the Phase 1 tests still pass)
+  - colors match CSS values (tested)
+  - it works on desktop and in the browser
+
 ### Phase 2: Bouncing ship (movement)
 - **Goal:** the ship moves and bounces off the window edges.
 - **Proves:** fixed-timestep loop, `on_update(delta_time)`, per-second velocities, and dirty-buffer updates (§7, §8).
@@ -500,6 +538,9 @@ ferrocade/                 # repo root
 | 2026-10-12 | Platforms: Windows (prototype), macOS, web (WASM) | Portability rules in §9; Linux unofficial |
 | 2026-10-12 | Renderer limited to WebGL2-level features by default | Guarantees the web fallback works |
 | 2026-10-12 | Web: Option B (Pyodide + separate wasm-bindgen engine module); revisit A when upstream unblocks it | Owner accepted the Phase 1b spike recommendation (`docs/research/web-spike.md`) |
+| 2026-10-12 | `fc.color` = all CSS named colors, UPPER_SNAKE names, CSS values win (GREEN=(0,128,0)); default background renamed `DEFAULT_BACKGROUND` (32,32,32) | §3 "Colors" |
+| 2026-10-12 | Solid-color rectangle and circle sprites without images, via per-sprite `color` tint plus shared built-in white textures (instance stays 48 bytes) | §3 "Shape sprites"; API details proposed |
+| 2026-10-12 | New Phase 1c (colors + shape sprites) before Phase 2 | §10 |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
 | 2026-10-12 | Collision detection implemented in Rust | Design open (§11) |
 | 2026-10-12 | winit for windowing | Confirmed |
