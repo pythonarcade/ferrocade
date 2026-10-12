@@ -9,16 +9,20 @@
 
 #![cfg(target_arch = "wasm32")]
 
+use std::cell::RefCell;
 use std::path::Path;
+use std::rc::Rc;
 
 use ferrocade::color;
 use ferrocade::frame::{self, FrameCommand};
+use ferrocade::input::{Key, Keyboard, RawKeyEvent};
 use ferrocade::render::Renderer;
 use ferrocade::store::{self, ListId, SpriteId};
 use ferrocade::texture::{self, Filter, TextureRef};
 use ferrocade::timestep::FixedTimestep;
+use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::*;
-use web_sys::HtmlCanvasElement;
+use web_sys::{HtmlCanvasElement, KeyboardEvent};
 
 fn js_err(e: ferrocade::Error) -> JsError {
     JsError::new(&e.to_string())
@@ -45,6 +49,8 @@ pub struct Engine {
     textures: Vec<TextureRef>,
     sprites: Vec<Option<SpriteId>>,
     lists: Vec<Option<ListId>>,
+    /// Shared with the canvas key listeners.
+    keyboard: Rc<RefCell<Keyboard>>,
 }
 
 impl Engine {
@@ -106,6 +112,8 @@ impl Engine {
         let renderer = Renderer::with_surface(&instance, surface, width, height)
             .await
             .map_err(js_err)?;
+        let keyboard = Rc::new(RefCell::new(Keyboard::default()));
+        attach_keyboard(&canvas, &keyboard)?;
         Ok(Engine {
             canvas,
             renderer,
@@ -118,6 +126,7 @@ impl Engine {
             textures: Vec::new(),
             sprites: Vec::new(),
             lists: Vec::new(),
+            keyboard,
         })
     }
 
@@ -300,6 +309,21 @@ impl Engine {
         ]
     }
 
+    /// Key events since the last call, as flat `[code, pressed (0/1), modifiers, ...]` triples.
+    pub fn take_key_events(&self) -> Vec<i32> {
+        self.keyboard
+            .borrow_mut()
+            .drain()
+            .into_iter()
+            .flat_map(|e| [e.key.code() as i32, e.pressed as i32, e.modifiers as i32])
+            .collect()
+    }
+
+    /// Give the canvas keyboard focus.
+    pub fn focus(&self) {
+        let _ = self.canvas.focus();
+    }
+
     /// Draw calls in the most recent frame (for the browser checks).
     pub fn draw_calls(&self) -> u32 {
         self.renderer.last_frame_stats().draw_calls
@@ -380,4 +404,76 @@ impl Engine {
     pub fn draw_list(&self, list: u32) -> Result<(), JsError> {
         frame::push(FrameCommand::DrawList(self.list(list)?), "draw").map_err(js_err)
     }
+}
+
+/// Feed the canvas's key events into `keyboard`, and release held keys when focus is lost.
+/// The listeners live as long as the page (the engine is never dropped).
+fn attach_keyboard(
+    canvas: &HtmlCanvasElement,
+    keyboard: &Rc<RefCell<Keyboard>>,
+) -> Result<(), JsError> {
+    let js = |e: JsValue| JsError::new(&format!("could not attach key listeners: {e:?}"));
+    // Focusable, so it receives key events (the loader focuses it on start and on click).
+    canvas.set_tab_index(0);
+
+    for (event_name, pressed) in [("keydown", true), ("keyup", false)] {
+        let keyboard = keyboard.clone();
+        let listener = Closure::<dyn FnMut(KeyboardEvent)>::new(move |event: KeyboardEvent| {
+            let Some(key) = Key::from_w3c(&event.code()) else {
+                return;
+            };
+            keyboard.borrow_mut().push(RawKeyEvent {
+                key,
+                pressed,
+                repeat: event.repeat(),
+            });
+            // Stop the page from acting on game keys (scrolling, quick-find), but keep browser
+            // shortcuts (Ctrl/Alt/Meta combinations, F1-F12) and Tab focus navigation.
+            let browser_key = event.ctrl_key()
+                || event.alt_key()
+                || event.meta_key()
+                || key == Key::Tab
+                || (Key::F1.code()..=Key::F12.code()).contains(&key.code());
+            if !browser_key {
+                event.prevent_default();
+            }
+        });
+        canvas
+            .add_event_listener_with_callback(event_name, listener.as_ref().unchecked_ref())
+            .map_err(js)?;
+        listener.forget();
+    }
+
+    let release = {
+        let keyboard = keyboard.clone();
+        Closure::<dyn FnMut()>::new(move || keyboard.borrow_mut().release_all())
+    };
+    canvas
+        .add_event_listener_with_callback("blur", release.as_ref().unchecked_ref())
+        .map_err(js)?;
+    if let Some(window) = web_sys::window() {
+        window
+            .add_event_listener_with_callback("blur", release.as_ref().unchecked_ref())
+            .map_err(js)?;
+        if let Some(document) = window.document() {
+            let hidden = {
+                let keyboard = keyboard.clone();
+                let document = document.clone();
+                Closure::<dyn FnMut()>::new(move || {
+                    if document.visibility_state() == web_sys::VisibilityState::Hidden {
+                        keyboard.borrow_mut().release_all();
+                    }
+                })
+            };
+            document
+                .add_event_listener_with_callback(
+                    "visibilitychange",
+                    hidden.as_ref().unchecked_ref(),
+                )
+                .map_err(js)?;
+            hidden.forget();
+        }
+    }
+    release.forget();
+    Ok(())
 }

@@ -15,6 +15,6 @@ wgpu.workspace = true
 wasm-bindgen = "=0.2.129"
 wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
-web-sys = { version = "0.3", features = ["HtmlCanvasElement", "CssStyleDeclaration", "Window", "Document", "console"] }
+web-sys = { version = "0.3", features = ["HtmlCanvasElement", "HtmlElement", "CssStyleDeclaration", "Window", "Document", "console", "KeyboardEvent", "FocusEvent", "Event", "EventTarget", "AddEventListenerOptions", "VisibilityState"] }
 console_error_panic_hook = "0.1"
 web-time.workspace = true

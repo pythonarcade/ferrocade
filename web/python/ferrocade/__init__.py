@@ -16,7 +16,7 @@ import traceback
 import js
 from pyodide.ffi import JsException, create_proxy
 
-from . import color
+from . import color, key
 
 __version__ = "0.1.0-web-spike"
 
@@ -32,6 +32,7 @@ __all__ = [
     "Texture",
     "Window",
     "color",
+    "key",
     "__version__",
 ]
 
@@ -90,6 +91,7 @@ class Window:
         self._proxy = None
         self._last = None
         self.show_fps = False
+        self._held = set()  # keys held, from the engine's per-frame key events
         self._title_refreshed = 0.0
 
     width = property(lambda self: self._width)
@@ -108,6 +110,29 @@ class Window:
 
     def on_update(self, delta_time):
         pass
+
+    def on_key_press(self, key, modifiers):
+        pass
+
+    def on_key_release(self, key, modifiers):
+        pass
+
+    def is_key_pressed(self, key):
+        if not isinstance(key, int):
+            raise TypeError(f"key must be an int (a ferrocade.key constant), not {type(key).__name__}")
+        return key in self._held
+
+    def _deliver_keys(self):
+        # One engine call per frame: flat [code, pressed, modifiers, ...] triples.
+        events = _engine.take_key_events()
+        for i in range(0, len(events), 3):
+            code, pressed, modifiers = events[i], events[i + 1], events[i + 2]
+            if pressed:
+                self._held.add(code)
+                self.on_key_press(code, modifiers)
+            else:
+                self._held.discard(code)
+                self.on_key_release(code, modifiers)
 
     def clear(self, color=None):
         rgba = tuple(color) if color is not None else (32, 32, 32)
@@ -132,6 +157,7 @@ class Window:
             now = timestamp_ms / 1000.0
             elapsed = 0.0 if self._last is None else now - self._last
             self._last = now
+            self._deliver_keys()
             for _ in range(_engine.advance(elapsed)):
                 self.on_update(self._update_rate)
             _engine.begin_frame()

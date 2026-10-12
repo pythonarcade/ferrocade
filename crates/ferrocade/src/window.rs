@@ -2,6 +2,7 @@
 
 use std::sync::{Arc, Mutex};
 
+use crate::input::{Key, KeyEvent, Keyboard, RawKeyEvent};
 use crate::texture::Filter;
 use crate::{Error, Result};
 
@@ -45,6 +46,7 @@ struct Inner {
     height: u32,
     stats: RollingStats,
     show_fps: bool,
+    keyboard: Keyboard,
 }
 
 /// Frame statistics averaged over the last ~1 second (draw counts are from the last frame).
@@ -158,6 +160,30 @@ impl WindowState {
         self.0.lock().unwrap().stats = RollingStats::default();
     }
 
+    /// Start a new run with no keys held or queued.
+    pub fn reset_input(&self) {
+        self.0.lock().unwrap().keyboard.reset();
+    }
+
+    /// Queue a key event from the platform (or a test).
+    pub fn push_key(&self, event: RawKeyEvent) {
+        self.0.lock().unwrap().keyboard.push(event);
+    }
+
+    /// Release every held key (the window lost focus).
+    pub fn release_all_keys(&self) {
+        self.0.lock().unwrap().keyboard.release_all();
+    }
+
+    /// Apply queued key events; returns the ones to deliver to the game, in order.
+    pub fn drain_keys(&self) -> Vec<KeyEvent> {
+        self.0.lock().unwrap().keyboard.drain()
+    }
+
+    pub fn is_key_held(&self, key: Key) -> bool {
+        self.0.lock().unwrap().keyboard.is_held(key)
+    }
+
     pub fn show_fps(&self) -> bool {
         self.0.lock().unwrap().show_fps
     }
@@ -210,6 +236,16 @@ pub trait GameCallbacks {
     type Error;
     fn update(&mut self, delta_time: f64) -> std::result::Result<(), Self::Error>;
     fn draw(&mut self) -> std::result::Result<(), Self::Error>;
+    /// A key went down (`modifiers`: `input::MOD_*` flags held after the event).
+    fn key_press(&mut self, key: Key, modifiers: u8) -> std::result::Result<(), Self::Error> {
+        let _ = (key, modifiers);
+        Ok(())
+    }
+    /// A key went up.
+    fn key_release(&mut self, key: Key, modifiers: u8) -> std::result::Result<(), Self::Error> {
+        let _ = (key, modifiers);
+        Ok(())
+    }
     /// Called once per frame so the host can surface interrupts (e.g. Ctrl+C).
     fn check_interrupt(&mut self) -> std::result::Result<(), Self::Error>;
 }

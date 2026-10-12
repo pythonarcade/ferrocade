@@ -213,7 +213,16 @@ Game().run()
 - winit uses a top-left origin, so the engine flips mouse coordinates to bottom-left before passing them to Python.
 - Note: the winit event loop must run on the main thread (required on macOS), and it calls back into Python.
 - `Window.run()` blocks on desktop. On the web it hands control to the browser's frame loop and returns or never returns, depending on the binding approach (§9). User code should treat `run()` as the last line of the program.
-- **TBD:** keyboard/mouse callbacks (`on_key_press`, etc.), gamepad support (e.g. gilrs).
+- **Keyboard (implemented in Phase 4, 2026-10-12):**
+  - `on_key_press(key, modifiers)` / `on_key_release(key, modifiers)` `Window` callbacks, and `Window.is_key_pressed(key)` polling.
+  - Keys are **physical positions** (`fc.key.W` is the key in QWERTY's W position on any layout), named after the W3C UI Events `code` values in one core table (`crates/ferrocade/src/input.rs`) that both winit and the browser map to. `fc.key` (`python/ferrocade/key.py`) is generated from that table and shared by the web build.
+  - Key names: `A`–`Z`, `KEY_0`–`KEY_9`, `F1`–`F12`, arrows, `SPACE`, `ENTER`, `ESCAPE`, `TAB`, `PAGE_UP`/`PAGE_DOWN`, `BRACKET_LEFT`/`BRACKET_RIGHT`, sided modifiers (`LSHIFT`, `RCTRL`, `LSYSTEM`, ...), and keypad `NUM_*`.
+  - One press and one release per keystroke: operating-system auto-repeat is ignored.
+  - `modifiers` = `MOD_SHIFT | MOD_CTRL | MOD_ALT | MOD_SYSTEM` flags for the keys held **after** the event (either side counts).
+  - Events are queued and delivered once per frame, before that frame's `on_update` calls, so callbacks and polling always agree.
+  - Losing focus releases every held key (with `on_key_release` for each).
+  - Browser: keys reach the game while the canvas has focus (focused on start and on click). Game keys don't scroll or trigger page features; Ctrl/Alt/Meta combinations, F1–F12 and Tab keep their browser behavior.
+- **TBD:** mouse callbacks, gamepad support (e.g. gilrs), text input.
 
 ## 6. Python Integration
 
@@ -405,6 +414,7 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 - **Done when:** the targets are met, or the bottlenecks are profiled and documented.
 
 ### Phase 4: Keyboard control
+- **Status (2026-10-12): implemented** on desktop and web (WebGPU and WebGL2). See `docs/research/phase4-validation.md`. Example: `examples/04_keyboard_ship.py`. Manual checks are pending the owner.
 - **Goal:** steer the ship with the keyboard.
 - **Proves:** input events flow from winit → Rust → Python callbacks.
 - **Delivers:**
@@ -509,6 +519,7 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 - [ ] Physics response (after the collision system, §11)
 - [ ] Angle-to-velocity helper: set a sprite's velocity from a heading (degrees, counter-clockwise) and a speed, so users rarely need `math.radians`/`cos`/`sin` (e.g. something like `sprite.set_velocity_from_angle(angle, speed)`; the exact API is TBD)
 - [ ] Shapes/primitives drawing
+- [ ] `Window.close()`: close the window from game code (e.g. quit on Escape); left out of Phase 4
 - [ ] GPU selection setting: let a game opt into the low-power GPU (the high-performance default is decided, §4); add only when needed
 - [ ] Benchmarks: a vsync-off mode for raw FPS, and a higher ramp cap or time-boxed search, so discrete-GPU limits can be found
 - [ ] Web stress measurement: a browser variant of the `python_moved` scene (Pyodide → JS → WASM call cost)
@@ -600,6 +611,9 @@ ferrocade/                 # repo root
 | 2026-10-12 | Phase 3 benchmark method: sustainable = FPS ≥ 59 and per-frame work < 14 ms; each engine/scene in its own process; Arcade paced with vsync and 1/240 rates, Pygame with `Clock.tick(60)` and no spin | Deviations from the plan, needed for fair Windows pacing; see the fairness notes in the report |
 | 2026-10-12 | Prefer the high-performance (discrete) GPU by default (wgpu `PowerPreference::HighPerformance`) | Owner chose option A after the Phase 3 finding; §4 |
 | 2026-10-12 | The collision architecture (§11) is decided before Phase 5 or as part of Phase 5 | Owner direction; the design itself stays open until then |
+| 2026-10-12 | Phase 4 key names: `KEY_0`–`KEY_9`, `NUM_*`, `PAGE_UP`/`PAGE_DOWN`, `BRACKET_LEFT`/`BRACKET_RIGHT`, `LSYSTEM`/`RSYSTEM` and `MOD_SYSTEM` | Owner confirmed at Phase 4 planning; §5 |
+| 2026-10-12 | Key modifiers report the keys held after the event; no `Window.close()` / Escape-to-quit in Phase 4 | Owner confirmed at Phase 4 planning; `Window.close()` added to the backlog |
+| 2026-10-12 | Keyboard behavior: physical keys, auto-repeat ignored, focus loss releases held keys, events delivered once per frame before `on_update` | Phase 4 spec defaults; the owner reviewed the spec and plan without changes; §5 |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
 | 2026-10-12 | Collision detection implemented in Rust | Design open (§11) |
 | 2026-10-12 | winit for windowing | Confirmed |

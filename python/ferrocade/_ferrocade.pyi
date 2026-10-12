@@ -76,6 +76,20 @@ class Window:
         """Called once per displayed frame. Override to draw."""
     def on_update(self, delta_time: float) -> None:
         """Called at a fixed rate; `delta_time` equals `update_rate`. Override to update."""
+    def on_key_press(self, key: int, modifiers: int) -> None:
+        """Called once when a key goes down; operating-system auto-repeat is ignored.
+
+        `key` is a `ferrocade.key` constant (a physical key position). `modifiers` holds the
+        `key.MOD_*` flags held after the event. Delivered before the frame's `on_update` calls.
+        """
+    def on_key_release(self, key: int, modifiers: int) -> None:
+        """Called once when a key goes up. Held keys are released when the window loses focus."""
+    def is_key_pressed(self, key: int) -> bool:
+        """Whether `key` is held, as of the key events delivered so far."""
+    def _inject_key(self, key: int, pressed: bool, repeat: bool = False) -> None:
+        """Private (tests): queue a key event as if the platform had sent it."""
+    def _inject_focus_lost(self) -> None:
+        """Private (tests): act as if the window lost focus."""
 
 @final
 class Texture:
@@ -180,3 +194,4 @@ class SpriteList:
     def __iter__(self) -> Iterator[Sprite]: ...
 
 def _debug_texture_disk_reads() -> int: ...
+def _key_table() -> list[tuple[str, int]]: ...

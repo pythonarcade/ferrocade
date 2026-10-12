@@ -96,16 +96,22 @@ async function main() {
     }
   };
   window.ferrocadeEngine = engine;
+  // Keys reach the game while the canvas has focus.
+  engine.focus();
+  canvas.addEventListener("click", () => engine.focus());
 
   setStatus("Loading assets…");
   // SPIKE: hard-coded asset list; a real build needs an asset manifest or bundler.
   const assets = ["assets/images/ship.png"];
   for (const path of assets) writeFile(pyodide, path, await fetchBytes(`../${path}`));
-  // The browser package: its own __init__.py, plus the desktop package's color.py (one source).
+  // The browser package: its own __init__.py, plus the desktop package's color.py and key.py
+  // (one source).
   writeFile(pyodide, "/home/pyodide/ferrocade/__init__.py",
             await fetchBytes("python/ferrocade/__init__.py"));
   writeFile(pyodide, "/home/pyodide/ferrocade/color.py",
             await fetchBytes("../python/ferrocade/color.py"));
+  writeFile(pyodide, "/home/pyodide/ferrocade/key.py",
+            await fetchBytes("../python/ferrocade/key.py"));
 
   const source = new TextDecoder().decode(await fetchBytes(`../examples/${example}.py`));
   window.ferrocadeExampleSource = source; // lets the check script verify it is unchanged (W5)

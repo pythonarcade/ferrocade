@@ -1,5 +1,5 @@
 // SPIKE: load the web example in headless Chrome/Edge and report what happened.
-// Usage: node check.mjs [url] [--browser=chrome|edge] [--fresh]
+// Usage: node check.mjs [url] [--browser=chrome|edge] [--fresh] [--motion] [--keys]
 // Prints a JSON summary (backend, time-to-ship, centering, bytes by kind) and saves a screenshot.
 import fs from "node:fs";
 import os from "node:os";
@@ -77,11 +77,35 @@ if (args.includes("--motion")) {
   if (!(moved > 50 && inside)) outcome = "motion-failed";
 }
 
+// --keys: hold ArrowRight on the focused canvas; the first sprite must move right (and not up or
+// down), and the page must not scroll even though it is taller than the viewport.
+let keys = null;
+if (args.includes("--keys")) {
+  await page.evaluate(() => { document.body.style.minHeight = "3000px"; });
+  await page.focus("#game");
+  const read = () => page.evaluate(() => Array.from(window.ferrocadeEngine.get_sprite(0)).slice(0, 2));
+  const before = await read();
+  await page.keyboard.down("ArrowRight");
+  await new Promise((r) => setTimeout(r, 1000));
+  const during = await read();
+  await page.keyboard.up("ArrowRight");
+  await new Promise((r) => setTimeout(r, 300));
+  const after = await read();
+  await new Promise((r) => setTimeout(r, 300));
+  const stopped = await read();
+  const scrollY = await page.evaluate(() => window.scrollY);
+  keys = { before, during, after, stopped, scrollY,
+           dx: Math.round(during[0] - before[0]), dy: Math.round(during[1] - before[1]) };
+  const ok = keys.dx > 100 && Math.abs(during[1] - before[1]) < 1 && scrollY === 0
+    && after[0] === stopped[0];
+  if (!ok) outcome = "keys-failed";
+}
+
 const pick = (prefix) => console_.find((l) => l.includes(prefix)) ?? null;
 const summary = {
   url, browser: browserName, outcome,
   backend: pick("backend="), timeToShip: pick("ship-visible"), centering: pick("centering"),
-  exampleUnchanged, drawCalls, motion, bytes, errorText: errorText || null, screenshot: shot,
+  exampleUnchanged, drawCalls, motion, keys, bytes, errorText: errorText || null, screenshot: shot,
   console: console_.slice(0, 40),
 };
 console.log(JSON.stringify(summary, null, 2));

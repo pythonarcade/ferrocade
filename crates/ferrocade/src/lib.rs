@@ -6,6 +6,7 @@ pub mod assets;
 pub mod color;
 pub mod error;
 pub mod frame;
+pub mod input;
 pub mod instance;
 #[cfg(feature = "render")]
 pub mod platform;

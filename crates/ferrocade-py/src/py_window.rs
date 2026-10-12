@@ -2,8 +2,9 @@
 
 use ferrocade::color;
 use ferrocade::frame::{self, FrameCommand};
+use ferrocade::input::{Key, RawKeyEvent};
 use ferrocade::window::{GameCallbacks, RunError, WindowConfig, WindowState};
-use pyo3::exceptions::PyRuntimeError;
+use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyTuple};
 
@@ -159,6 +160,44 @@ impl PyWindow {
         let _ = delta_time;
     }
 
+    /// Called once when a key goes down (auto-repeat is ignored). Override to react.
+    fn on_key_press(&self, key: u16, modifiers: u8) {
+        let _ = (key, modifiers);
+    }
+
+    /// Called once when a key goes up (also for held keys when the window loses focus).
+    fn on_key_release(&self, key: u16, modifiers: u8) {
+        let _ = (key, modifiers);
+    }
+
+    /// Whether `key` is held, as of the key events delivered so far.
+    fn is_key_pressed(&self, key: i64) -> bool {
+        u16::try_from(key)
+            .ok()
+            .and_then(Key::from_code)
+            .is_some_and(|k| self.state.is_key_held(k))
+    }
+
+    /// Private (tests): queue a key event as if the platform had sent it.
+    #[pyo3(signature = (key, pressed, repeat=false))]
+    fn _inject_key(&self, key: i64, pressed: bool, repeat: bool) -> PyResult<()> {
+        let key = u16::try_from(key)
+            .ok()
+            .and_then(Key::from_code)
+            .ok_or_else(|| PyValueError::new_err(format!("unknown key code {key}")))?;
+        self.state.push_key(RawKeyEvent {
+            key,
+            pressed,
+            repeat,
+        });
+        Ok(())
+    }
+
+    /// Private (tests): act as if the window lost focus.
+    fn _inject_focus_lost(&self) {
+        self.state.release_all_keys();
+    }
+
     /// Fill the window with a color. Only valid inside `on_draw()`.
     #[pyo3(signature = (color=None))]
     fn clear(&self, color: Option<Vec<i64>>) -> PyResult<()> {
@@ -212,6 +251,18 @@ impl GameCallbacks for PyCallbacks<'_> {
 
     fn draw(&mut self) -> PyResult<()> {
         self.window.call_method0("on_draw")?;
+        Ok(())
+    }
+
+    fn key_press(&mut self, key: Key, modifiers: u8) -> PyResult<()> {
+        self.window
+            .call_method1("on_key_press", (key.code(), modifiers))?;
+        Ok(())
+    }
+
+    fn key_release(&mut self, key: Key, modifiers: u8) -> PyResult<()> {
+        self.window
+            .call_method1("on_key_release", (key.code(), modifiers))?;
         Ok(())
     }
 
