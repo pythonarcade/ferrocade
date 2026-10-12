@@ -140,7 +140,7 @@ We compared the class structure of other engines:
 ### Coordinate system (decided)
 - The origin `(0, 0)` is the **bottom-left** corner of the window, with **y going up** (same as Arcade and OpenGL).
 - Units are pixels. `center_x`/`center_y` give the sprite's center point.
-- `angle` is in degrees (rotation direction is **TBD** when rotation is implemented).
+- `angle` is in degrees. **A positive angle rotates counter-clockwise** (the math convention, consistent with y-up: heading `angle` means direction `(cos, sin)`). Decided 2026-10-12; Unity and Bevy do the same, while Arcade 3.x and pyglet use clockwise.
 
 ### API style (decided)
 - Users **subclass `Window`** and override callbacks (`on_draw`, `on_update`, and later input callbacks).
@@ -582,6 +582,7 @@ ferrocade/                 # repo root
 | 2026-10-12 | Circle edges follow the window filter, with a per-circle `filter=` override | Consistent with "no hidden default filter" |
 | 2026-10-12 | Add a performance showcase milestone after Phase 5: walls plus many bouncing sprites, showing render, move, and collision speed | Owner request; collision response and timing display to be decided (§10) |
 | 2026-10-12 | Built-in shape atlas is mipmapped (6 levels) and the disc is kept clear of the white half | Needed so `LINEAR` circles stay smooth when drawn small; found by Phase 1c tests |
+| 2026-10-12 | Rotation: a positive angle is counter-clockwise (math convention) | Chosen for mathematical consistency with y-up; differs from Arcade 3.x |
 | 2026-10-12 | Collision direction: Rust does movement and detection, Python manages collisions (game logic) | Owner direction; delivery mechanism Proposed (§11 Q6: built-in Rust responses plus batched enter/exit events plus queries) |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
 | 2026-10-12 | Collision detection implemented in Rust | Design open (§11) |
