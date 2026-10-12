@@ -316,7 +316,8 @@ This is the **hardest platform requirement**. The engine API is Python, so the b
 | **C. RustPython** | A Python interpreter written in Rust, compiled into the same WASM as the engine. | Single WASM module, no Emscripten. | Incomplete CPython compatibility, slower interpreter, no C-extension ecosystem. |
 
 - **Current leaning:** Option A, because it keeps one binding layer and real CPython. Option B is the fallback.
-- **Action:** run a **web feasibility spike early** (Phase 1b, right after v1 works on Windows). Build the v1 example (window + centered ship) under Pyodide before the engine grows. The result decides whether the platform layer needs a custom web backend.
+- **Action:** run a **web feasibility spike early** (Phase 1b, right after v1 works on Windows).
+- **Phase 1b spike results:** `docs/research/web-spike.md` (recommendation pending owner acceptance). Build the v1 example (window + centered ship) under Pyodide before the engine grows. The result decides whether the platform layer needs a custom web backend.
 - Web-specific notes for later: Pyodide can run in a Web Worker with `OffscreenCanvas`. Audio requires a user gesture before starting. Assets must be preloaded into Pyodide's virtual filesystem or fetched asynchronously.
 
 ### Distribution (later)

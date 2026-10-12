@@ -95,22 +95,22 @@ description: "Task list for Phase 1b — Web Feasibility Spike"
 - [X] T014 [US1] A2: rebuild with `default-features = true` (render enabled), and add a function that calls `pollster`-free `Renderer::offscreen`.
   - Record the exact failure, with build or link output, in `spike/pyodide-wheel/NOTES.md`. The expected failures are wgpu#10274 `__wbindgen_placeholder__` imports, or winit "platform not supported".
   - If it unexpectedly builds and loads, record that and tell the owner before continuing.
-- [ ] T015 [US1] Write approach A's findings into `docs/research/web-spike.md`: the status (`blocked` or `proven`), A1 and A2 evidence, tool versions, blockers with upstream links and how to tell when they're resolved, and the engine impact (feature-gated core: *done in spike* / *nice to have*).
+- [X] T015 [US1] Write approach A's findings into `docs/research/web-spike.md`: the status (`blocked` or `proven`), A1 and A2 evidence, tool versions, blockers with upstream links and how to tell when they're resolved, and the engine impact (feature-gated core: *done in spike* / *nice to have*).
 
 ### Paper assessments
 
-- [ ] T016 [P] [US1] Write the **A′** assessment into `docs/research/web-spike.md`: an Emscripten wheel with a hand-written WebGL2 renderer (glow) plus an Emscripten platform layer. Cover the components it needs, the estimated size relative to the current renderer, the cost of maintaining two renderers, and when it would make sense. Status: `assessed on paper`.
-- [ ] T017 [P] [US1] Write the **C** assessment (RustPython) into `docs/research/web-spike.md`: CPython compatibility gaps, no PyO3 (bindings rewritten against `rustpython_vm`), single-binary upside, and maturity. Optionally do a quick check of the current RustPython browser build instructions and record what was found. Status: `assessed on paper` (or `not attempted` with the reason).
+- [X] T016 [P] [US1] Write the **A′** assessment into `docs/research/web-spike.md`: an Emscripten wheel with a hand-written WebGL2 renderer (glow) plus an Emscripten platform layer. Cover the components it needs, the estimated size relative to the current renderer, the cost of maintaining two renderers, and when it would make sense. Status: `assessed on paper`.
+- [X] T017 [P] [US1] Write the **C** assessment (RustPython) into `docs/research/web-spike.md`: CPython compatibility gaps, no PyO3 (bindings rewritten against `rustpython_vm`), single-binary upside, and maturity. Optionally do a quick check of the current RustPython browser build instructions and record what was found. Status: `assessed on paper` (or `not attempted` with the reason).
 
 ### Decision (needs US2 results)
 
-- [ ] T018 [US1] Write the **B** findings into `docs/research/web-spike.md` from the US2 evidence (T031–T036): status, evidence, measurements (download bytes, cold and warm time-to-ship, graphics paths, centering, example diff lines), and the documented web behavior differences (contract §1 table).
-- [ ] T019 [US1] Fill in the **Engine impact** table in `docs/research/web-spike.md`.
+- [X] T018 [US1] Write the **B** findings into `docs/research/web-spike.md` from the US2 evidence (T031–T036): status, evidence, measurements (download bytes, cold and warm time-to-ship, graphics paths, centering, example diff lines), and the documented web behavior differences (contract §1 table).
+- [X] T019 [US1] Fill in the **Engine impact** table in `docs/research/web-spike.md`.
   - Classify every change: `load_from_bytes` (done), wasm32 wgpu features (done), the `render` feature (done if T011 ran), `ferrocade-web` crate (done, spike-quality), the Python shim (spike, so it has to become a real package), the hard-coded asset list (required before shipping web), winit web backend for input (required before Phase 4 on web), shared API tests across both bindings (required), vendoring Pyodide versus CDN (nice to have).
   - List every `SPIKE:` marker.
-- [ ] T020 [US1] Write the **Comparison** (A / A′ / B / C against: works today, game-code changes, renderer count, binding layers, per-call cost, download size, build host, maintenance) and the **Risks** (API drift between the two bindings, Python→JS→WASM call overhead, Pyodide download size, wgpu web maturity, `run()` behaving differently on the web).
-- [ ] T021 [US1] Write the **Summary and recommendation**: one approach (expected: B now, with A revisited when Pyodide adopts Emscripten ≥ 6.0.10 and wgpu#10515 lands), or "none viable yet" plus what would change that. Add concrete **Next steps**, and mark the recommendation **Proposed (pending owner acceptance)**.
-- [ ] T022 [US1] In `docs/spec/ENGINE_SPEC.md` §9 "Web", add one line: "Phase 1b spike results: `docs/research/web-spike.md` (recommendation pending owner acceptance)". Do **not** change the decision log or mark any approach as decided (FR-015).
+- [X] T020 [US1] Write the **Comparison** (A / A′ / B / C against: works today, game-code changes, renderer count, binding layers, per-call cost, download size, build host, maintenance) and the **Risks** (API drift between the two bindings, Python→JS→WASM call overhead, Pyodide download size, wgpu web maturity, `run()` behaving differently on the web).
+- [X] T021 [US1] Write the **Summary and recommendation**: one approach (expected: B now, with A revisited when Pyodide adopts Emscripten ≥ 6.0.10 and wgpu#10515 lands), or "none viable yet" plus what would change that. Add concrete **Next steps**, and mark the recommendation **Proposed (pending owner acceptance)**.
+- [X] T022 [US1] In `docs/spec/ENGINE_SPEC.md` §9 "Web", add one line: "Phase 1b spike results: `docs/research/web-spike.md` (recommendation pending owner acceptance)". Do **not** change the decision log or mark any approach as decided (FR-015).
 
 **Checkpoint**: W1, the report is complete and gives a clear decision.
 
