@@ -14,7 +14,7 @@ use winit::window::{Window, WindowId};
 use crate::render::Renderer;
 use crate::timestep::FixedTimestep;
 use crate::window::{GameCallbacks, RunError, WindowConfig, WindowState};
-use crate::{Error, frame};
+use crate::{Error, frame, store};
 
 thread_local! {
     // winit allows one event loop per process, so it is created once and reused by every
@@ -95,9 +95,10 @@ impl<C: GameCallbacks> App<'_, C> {
                 .create_window(attributes)
                 .map_err(|e| Error::EventLoop(format!("could not create window: {e}")))?,
         );
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_with_display_handle_from_env(
-            Box::new(event_loop.owned_display_handle()),
-        ));
+        let instance =
+            wgpu::Instance::new(wgpu::InstanceDescriptor::new_with_display_handle_from_env(
+                Box::new(event_loop.owned_display_handle()),
+            ));
         let surface = instance
             .create_surface(window.clone())
             .map_err(|e| Error::Gpu(format!("could not create window surface: {e}")))?;
@@ -136,7 +137,12 @@ impl<C: GameCallbacks> App<'_, C> {
         }
 
         if let Some(renderer) = &mut self.renderer
-            && let Err(e) = renderer.render_frame(&commands, self.state.size(), self.config.filter)
+            && let Err(e) = renderer.render_frame(
+                &commands,
+                &mut store::global(),
+                self.state.size(),
+                self.config.filter,
+            )
         {
             return self.fail(event_loop, RunError::Engine(e));
         }

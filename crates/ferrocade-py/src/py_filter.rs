@@ -3,7 +3,14 @@
 use ferrocade::texture::Filter;
 use pyo3::prelude::*;
 
-#[pyclass(eq, frozen, hash, from_py_object, name = "Filter", module = "ferrocade")]
+#[pyclass(
+    eq,
+    frozen,
+    hash,
+    from_py_object,
+    name = "Filter",
+    module = "ferrocade"
+)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[allow(clippy::upper_case_acronyms)]
 pub enum PyFilter {

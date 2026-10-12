@@ -195,28 +195,28 @@ These follow plan.md "Project Structure":
 
 ### Tests for User Story 2
 
-- [ ] T028 [P] [US2] Write `crates/ferrocade/tests/texture_cache.rs`, covering:
+- [X] T028 [P] [US2] Write `crates/ferrocade/tests/texture_cache.rs`, covering:
   - loading `assets/images/ship.png` gives 99×75 with `pixels.len() == 99*75*4`
   - a missing path gives `Error::NotFound` whose message contains the file name
   - a temp file with garbage bytes and a `.png` name gives `Error::Decode` mentioning the path
   - a temp `.txt` file gives `Decode`/`Unsupported`
-- [ ] T029 [P] [US2] Write `crates/ferrocade/tests/store.rs` (basic), covering:
+- [X] T029 [P] [US2] Write `crates/ferrocade/tests/store.rs` (basic), covering:
   - create a sprite (center 400,300, scale 1, ship texture) and a list, append it, and assert that `instances[0]` has center `[400.0, 300.0]` and size `[99.0, 75.0]`, with a dirty range covering slot 0
   - "Appending the same sprite twice to the same list raises ValueError" (`Error::InvalidArgument`)
   - "Non-finite values (NaN/inf) raise ValueError"
-- [ ] T030 [P] [US2] Write `tests/test_texture.py` (basic), covering:
+- [X] T030 [P] [US2] Write `tests/test_texture.py` (basic), covering:
   - `fc.Texture("assets/images/ship.png")`: width 99, height 75, `path` is absolute and ends with `ship.png`, `filter is None`
   - created before any `Window`
   - a missing file gives `FileNotFoundError` with the name in the message
   - a corrupt file (`tmp_path`) gives `ValueError` with the path in the message (SC-006)
-- [ ] T031 [P] [US2] Write `tests/test_sprite.py` (basic), covering:
+- [X] T031 [P] [US2] Write `tests/test_sprite.py` (basic), covering:
   - `Sprite(texture)` and `Sprite("assets/images/ship.png")` are equivalent (same `width`/`height`/`texture ==`)
   - defaults: `center_x == center_y == 0.0`, `scale == 1.0`
   - `width == 99.0` and `height == 75.0`
   - `center_x = 0.1` reads back exactly `0.1`
   - `float('nan')` and `float('inf')` raise `ValueError`
   - `class Ship(fc.Sprite)` with `super().__init__("assets/images/ship.png", 400, 300)` works and can set extra attributes
-- [ ] T032 [P] [US2] Write `crates/ferrocade/tests/render_offscreen.rs`.
+- [X] T032 [P] [US2] Write `crates/ferrocade/tests/render_offscreen.rs`.
   - **Skip** (pass with a printed note) if no adapter is available.
   - **Setup:** render to an 800×600 offscreen target with a `DARK_GRAY` clear, one list holding the ship at (400,300) with window filter `Nearest`, then read the pixels back.
   - **Assertions:**
@@ -226,16 +226,16 @@ These follow plan.md "Project Structure":
 
 ### Implementation for User Story 2
 
-- [ ] T033 [US2] Implement the texture cache in `crates/ferrocade/src/texture.rs` (research.md R8, data-model.md TextureData).
+- [X] T033 [US2] Implement the texture cache in `crates/ferrocade/src/texture.rs` (research.md R8, data-model.md TextureData).
   - **`TextureData { id: TextureId, path: PathBuf, width: u32, height: u32, pixels: Arc<[u8]> }`**, where `TextureId` is a `u64` from a global atomic counter.
   - **`TextureCache`:** a global `Mutex<HashMap<PathBuf, Arc<TextureData>>>`.
   - **`pub fn load(path) -> Result<Arc<TextureData>>`:** canonicalize via `assets`, return the cached entry on a hit, otherwise `assets::read_bytes` → `image::load_from_memory` → `to_rgba8()`. Map decode errors to `Decode { path, reason }`.
   - **Strong references** ("textures are never unloaded" in Phase 1).
   - **A disk-read counter** `pub fn disk_reads() -> u64`, used to test SC-008.
-- [ ] T034 [P] [US2] Implement `crates/ferrocade/src/instance.rs`.
+- [X] T034 [P] [US2] Implement `crates/ferrocade/src/instance.rs`.
   - The `#[repr(C)]`, `bytemuck::Pod` struct `Instance { center: [f32;2], size: [f32;2], angle: f32, _pad0: [f32;3], uv_rect: [f32;4] }` ("48 bytes in total"). Add a const assert that `size_of == 48`.
   - `Instance::from_sprite(&SpriteState)`: size = `texture.width/height * |scale|`, and `uv_rect = (0,0,1,1)`.
-- [ ] T035 [US2] Implement the core of `crates/ferrocade/src/store.rs` (research.md R5, data-model.md).
+- [X] T035 [US2] Implement the core of `crates/ferrocade/src/store.rs` (research.md R5, data-model.md).
   - **A global `Mutex<SpriteStore>`**, with slotmaps for `sprites: SlotMap<SpriteId, SpriteState>` and `lists: SlotMap<ListId, ListState>`.
   - **`SpriteState`:** `center_x`, `center_y`, `scale`, `angle: f64`, `texture: (Arc<TextureData>, Option<Filter>)`, `memberships: SmallVec<[(ListId, u32); 2]>`.
   - **`ListState`:** `sprites: Vec<SpriteId>`, `instances: Vec<Instance>`, `slot_textures: Vec<(TextureId, Option<Filter>)>`, `dirty: Option<Range<usize>>`, `structure_version: u64`.
@@ -245,45 +245,45 @@ These follow plan.md "Project Structure":
     - `create_list()`, `destroy_list(id)` ("removes its memberships from all of its sprites")
     - `append(list, sprite)` (push, add the membership `(list, index)`, mark the new slot dirty, bump `structure_version`; a duplicate raises `InvalidArgument`)
     - getters, and `take_dirty(list) -> Option<(Range, &[Instance])>` for the renderer
-- [ ] T036 [P] [US2] Write `crates/ferrocade/src/render/sprite.wgsl`.
+- [X] T036 [P] [US2] Write `crates/ferrocade/src/render/sprite.wgsl`.
   - **Vertex stage:** build the quad corner from `vertex_index` (6 vertices, two triangles), using the per-instance attributes `center` (loc 0), `size` (loc 1), `angle` (loc 2, unused), and `uv_rect` (loc 3). Position = `center + (corner - 0.5) * size`, transformed by the uniform `projection: mat4x4<f32>` (group 0). The UV comes from `uv_rect`, with v flipped so the image is upright under a y-up projection.
   - **Fragment stage:** `textureSample(t, s, uv)` (group 1).
-- [ ] T037 [US2] Implement `crates/ferrocade/src/render/gpu_texture.rs`.
+- [X] T037 [US2] Implement `crates/ferrocade/src/render/gpu_texture.rs`.
   - Lazy upload of `TextureData` to an `Rgba8UnormSrgb` texture, keyed by `TextureId`.
   - Two samplers (`Nearest`, `Linear`), both `ClampToEdge`.
   - Bind groups cached per `(TextureId, Filter)`.
   - The bind group layout for texture plus sampler.
-- [ ] T038 [US2] Implement `crates/ferrocade/src/render/gpu_list.rs`.
+- [X] T038 [US2] Implement `crates/ferrocade/src/render/gpu_list.rs`.
   - A per-`ListId` GPU instance buffer (`VERTEX | COPY_DST`) that grows by doubling (recreated when there isn't enough room).
   - Each frame, upload only `take_dirty` via `queue.write_buffer`.
   - Compute batch runs (cached by `structure_version`): consecutive slots with the same `(TextureId, effective filter)`, where the effective filter is the override, otherwise the window filter.
   - `draw(pass)` issues one `draw(0..6, run_range)` per run.
-- [ ] T039 [US2] Extend `crates/ferrocade/src/render/mod.rs`.
+- [X] T039 [US2] Extend `crates/ferrocade/src/render/mod.rs`.
   - Create the sprite pipeline: `sprite.wgsl`, an instance vertex buffer layout matching `Instance` (stride 48), `BlendState::ALPHA_BLENDING`, no depth.
   - A projection uniform: an orthographic matrix over `(0..logical_w, 0..logical_h)`, bottom-left origin.
   - Execute `DrawList(id)` commands through `gpu_list` and `gpu_texture`, using the window `filter` passed into `render_frame`.
   - An offscreen target mode plus `read_pixels() -> Vec<u8>`, used by T032.
   - Drop the GPU mirrors with the renderer.
-- [ ] T040 [US2] Implement `Texture` in `crates/ferrocade-py/src/py_texture.rs`.
+- [X] T040 [US2] Implement `Texture` in `crates/ferrocade-py/src/py_texture.rs`.
   - **Class:** `#[pyclass(frozen, name = "Texture")]` (final).
   - **`#[new]` `(path: PathBuf /* str|PathLike */, *, filter: Option<PyFilter> = None)`:** calls `texture::load` and stores `(Arc<TextureData>, Option<Filter>)`.
   - **Getters:** `width`, `height`, `path` (a string), `filter`.
   - **Equality and hashing:** `__eq__` and `__hash__` on `(path, filter)`.
   - Errors go through `to_pyerr`.
   - Register it, then export it and add its stubs.
-- [ ] T041 [US2] Implement `Sprite` in `crates/ferrocade-py/src/py_sprite.rs` (R4 pattern, subclassable).
+- [X] T041 [US2] Implement `Sprite` in `crates/ferrocade-py/src/py_sprite.rs` (R4 pattern, subclassable).
   - **Struct and construction:** `#[pyclass(subclass, weakref)]` holding a `SpriteId`. `__init__(texture: Texture | str | PathLike, center_x=0.0, center_y=0.0, scale=1.0)`, where a path goes through `texture::load` with no override.
   - **Getters:** `center_x`, `center_y`, `position`, `scale`, `angle`, `texture`, `width`, `height` (= texture size × |scale|).
   - **Setters are deferred to US3**, but `center_x`/`center_y` are set at construction.
   - **`Drop`:** calls `store::destroy_sprite`.
   - Register it, then export it and add its stubs (the full property set per the contract).
-- [ ] T042 [US2] Implement `SpriteList` in `crates/ferrocade-py/src/py_sprite_list.rs`.
+- [X] T042 [US2] Implement `SpriteList` in `crates/ferrocade-py/src/py_sprite_list.rs`.
   - **Class:** `#[pyclass(name = "SpriteList")]` (final), holding a `ListId` plus `py_refs: Vec<Py<PyAny>>` that keep member sprites alive, in the same order.
   - **Methods:** `__init__`, `append(sprite)` (calls `store::append`, then pushes `py_ref`), `draw()` (`frame::push(DrawList(id), "draw")`), and `__len__`.
   - **`Drop`:** calls `store::destroy_list`.
   - Register it, then export it and add its stubs.
-- [ ] T043 [US2] Create `examples/01_centered_ship.py`. It uses exactly the "Usage" code from contracts/python-api.md (`filter=fc.NEAREST`, `assets/images/ship.png`, centered at `self.width / 2, self.height / 2`) and is run from the repo root.
-- [ ] T044 [US2] Run `cargo test -p ferrocade`, `maturin develop`, `pytest`, and `python examples/01_centered_ship.py`, and verify quickstart V3 (centered, 99×75, crisp edges, transparency).
+- [X] T043 [US2] Create `examples/01_centered_ship.py`. It uses exactly the "Usage" code from contracts/python-api.md (`filter=fc.NEAREST`, `assets/images/ship.png`, centered at `self.width / 2, self.height / 2`) and is run from the repo root.
+- [X] T044 [US2] Run `cargo test -p ferrocade`, `maturin develop`, `pytest`, and `python examples/01_centered_ship.py`, and verify quickstart V3 (centered, 99×75, crisp edges, transparency).
 
 **Checkpoint**: the Phase 1 milestone (window plus centered ship) is reached.
 
@@ -297,19 +297,19 @@ These follow plan.md "Project Structure":
 
 ### Tests for User Story 3
 
-- [ ] T045 [P] [US3] Extend `crates/ferrocade/tests/store.rs`, covering:
+- [X] T045 [P] [US3] Extend `crates/ferrocade/tests/store.rs`, covering:
   - a sprite in two lists: setting `center_x` updates both lists' `instances[slot]` and widens both dirty ranges
   - removing the middle sprite of 3 shifts the later slot down, updates its membership slot, and marks the shifted range dirty
   - removing a sprite that isn't in the list gives `InvalidArgument`
   - destroying a list clears the memberships
   - setting the texture updates `slot_textures` and bumps `structure_version`
   - scale 2.0 gives instance size `[198, 150]`
-- [ ] T046 [P] [US3] Extend `tests/test_texture.py`, covering:
+- [X] T046 [P] [US3] Extend `tests/test_texture.py`, covering:
   - `Texture(p) == Texture(p)` and their hashes are equal
   - `Texture(p) != Texture(p, filter=fc.LINEAR)`
   - creating 1,000 `Sprite(p)` objects plus `Texture(p, filter=fc.LINEAR)` leaves `fc._ferrocade._debug_texture_disk_reads()` increased by exactly 1 for a fresh file (copy `ship.png` to `tmp_path`; SC-008, FR-023)
   - `filter="linear"` raises `TypeError`
-- [ ] T047 [P] [US3] Write `tests/test_sprite_list.py`, covering:
+- [X] T047 [P] [US3] Write `tests/test_sprite_list.py`, covering:
   - `append`/`len`/`in`
   - appending a duplicate raises `ValueError`
   - `remove` preserves order, and removing a missing sprite raises `ValueError`
@@ -317,12 +317,12 @@ These follow plan.md "Project Structure":
   - one sprite in two lists
   - the list keeps the sprite alive (`weakref` to the sprite is still alive after `del`)
   - an empty list's `draw()` inside a frame doesn't raise (display test)
-- [ ] T048 [P] [US3] Extend `tests/test_sprite.py`, covering:
+- [X] T048 [P] [US3] Extend `tests/test_sprite.py`, covering:
   - `scale = 2.0` gives `width == 198.0` and `height == 150.0`
   - `position = (10.5, 20.25)` round-trips, and so do `center_x`/`center_y`
   - reassigning `texture` changes `width`/`height`
   - `angle` round-trips
-- [ ] T049 [P] [US3] Extend `crates/ferrocade/tests/render_offscreen.rs`, covering:
+- [X] T049 [P] [US3] Extend `crates/ferrocade/tests/render_offscreen.rs`, covering:
   - 10 sprites sharing one texture all render (10 separate blobs)
   - after moving one sprite via the store setter, the next frame shows it at the new position and not the old one
   - overlapping sprites: the one appended later is on top
@@ -330,14 +330,14 @@ These follow plan.md "Project Structure":
 
 ### Implementation for User Story 3
 
-- [ ] T050 [US3] Add setters to `crates/ferrocade/src/store.rs`: `set_center_x`, `set_center_y`, `set_position`, `set_scale`, `set_angle`, `set_texture`.
+- [X] T050 [US3] Add setters to `crates/ferrocade/src/store.rs`: `set_center_x`, `set_center_y`, `set_position`, `set_scale`, `set_angle`, `set_texture`.
   - "Every setter updates the f64 field, then recomputes the f32 Instance and writes it into each membership's list at slot, widening that list's dirty range."
   - `set_texture` also updates `slot_textures` and bumps `structure_version`.
   - Validate that values are finite.
-- [ ] T051 [US3] Add `remove(list, sprite)` and `contains(list, sprite)` to `crates/ferrocade/src/store.rs`. Removing "shifts later slots down by one (updating those sprites' membership slots), and marks the shifted range dirty". Removing a sprite that isn't in the list gives `InvalidArgument`.
-- [ ] T052 [US3] Wire the setters for `center_x`, `center_y`, `position`, `scale`, `angle`, and `texture` in `crates/ferrocade-py/src/py_sprite.rs`. `texture` accepts only a `Texture`.
-- [ ] T053 [US3] Add `remove`, `__contains__`, and `__iter__` to `crates/ferrocade-py/src/py_sprite_list.rs`. `__iter__` iterates over a snapshot of `py_refs`, and `remove` keeps `py_refs` in sync.
-- [ ] T054 [US3] Expose the private `_debug_texture_disk_reads()` in `crates/ferrocade-py/src/lib.rs` (wrapping `texture::disk_reads`). Make sure `Texture(path, filter=...)` overrides reach `slot_textures` and the batching in `gpu_list.rs`.
+- [X] T051 [US3] Add `remove(list, sprite)` and `contains(list, sprite)` to `crates/ferrocade/src/store.rs`. Removing "shifts later slots down by one (updating those sprites' membership slots), and marks the shifted range dirty". Removing a sprite that isn't in the list gives `InvalidArgument`.
+- [X] T052 [US3] Wire the setters for `center_x`, `center_y`, `position`, `scale`, `angle`, and `texture` in `crates/ferrocade-py/src/py_sprite.rs`. `texture` accepts only a `Texture`.
+- [X] T053 [US3] Add `remove`, `__contains__`, and `__iter__` to `crates/ferrocade-py/src/py_sprite_list.rs`. `__iter__` iterates over a snapshot of `py_refs`, and `remove` keeps `py_refs` in sync.
+- [X] T054 [US3] Expose the private `_debug_texture_disk_reads()` in `crates/ferrocade-py/src/lib.rs` (wrapping `texture::disk_reads`). Make sure `Texture(path, filter=...)` overrides reach `slot_textures` and the batching in `gpu_list.rs`.
 
 **Checkpoint**: all three user stories work, and the full Rust and pytest suites pass.
 

@@ -3,10 +3,17 @@
 //! It never touches windowing directly: the platform layer creates the surface and passes it
 //! in, or the renderer draws to an offscreen texture (used by tests).
 
+mod gpu_list;
+mod gpu_texture;
+mod sprites;
+
 use crate::color;
 use crate::frame::FrameCommand;
+use crate::store::SpriteStore;
 use crate::texture::Filter;
 use crate::{Error, Result};
+
+use sprites::SpritePipeline;
 
 const OFFSCREEN_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8UnormSrgb;
 
@@ -28,6 +35,7 @@ pub struct Renderer {
     device: wgpu::Device,
     queue: wgpu::Queue,
     target: Target,
+    sprites: SpritePipeline,
 }
 
 impl Renderer {
@@ -61,9 +69,11 @@ impl Renderer {
             view_formats: vec![],
             color_space: wgpu::SurfaceColorSpace::Auto,
         };
+        let sprites = SpritePipeline::new(&device, format);
         let mut renderer = Self {
             device,
             queue,
+            sprites,
             target: Target::Surface {
                 surface,
                 config,
@@ -94,9 +104,11 @@ impl Renderer {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
             view_formats: &[],
         });
+        let sprites = SpritePipeline::new(&device, OFFSCREEN_FORMAT);
         Ok(Self {
             device,
             queue,
+            sprites,
             target: Target::Offscreen {
                 texture,
                 width,
@@ -131,10 +143,10 @@ impl Renderer {
     pub fn render_frame(
         &mut self,
         commands: &[FrameCommand],
+        store: &mut SpriteStore,
         logical_size: (u32, u32),
         window_filter: Filter,
     ) -> Result<()> {
-        let _ = (logical_size, window_filter);
         let (view, surface_texture) = match self.acquire()? {
             Some(acquired) => acquired,
             None => return Ok(()), // Nothing to draw into this frame (minimized or surface lost).
@@ -146,15 +158,24 @@ impl Renderer {
                 label: Some("ferrocade frame"),
             });
 
+        self.sprites.begin_frame(&self.queue, logical_size, store);
+        // Upload every drawn list once, before recording passes.
+        for command in commands {
+            if let FrameCommand::DrawList(id) = *command {
+                self.sprites
+                    .prepare_list(&self.device, &self.queue, store, id, window_filter);
+            }
+        }
+
         // A clear only takes effect when the next pass starts, so consecutive clears collapse
         // into the last one. Frames without a clear start from the default background.
         let mut pending_clear = Some(color::to_linear_f32(color::DARK_GRAY));
         for command in commands {
             match *command {
                 FrameCommand::Clear(rgba) => pending_clear = Some(rgba),
-                FrameCommand::DrawList(_) => {
-                    let pass = begin_pass(&mut encoder, &view, pending_clear.take());
-                    drop(pass);
+                FrameCommand::DrawList(id) => {
+                    let mut pass = begin_pass(&mut encoder, &view, pending_clear.take());
+                    self.sprites.draw_list(&mut pass, id);
                 }
             }
         }
@@ -177,7 +198,9 @@ impl Renderer {
             height,
         } = &self.target
         else {
-            return Err(Error::Gpu("read_pixels() requires an offscreen renderer".into()));
+            return Err(Error::Gpu(
+                "read_pixels() requires an offscreen renderer".into(),
+            ));
         };
         let (width, height) = (*width, *height);
         let unpadded = width * 4;

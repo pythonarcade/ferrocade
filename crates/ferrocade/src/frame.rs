@@ -60,7 +60,10 @@ mod tests {
     #[test]
     fn push_outside_frame_fails() {
         let err = push(FrameCommand::Clear([0.0; 4]), "clear").unwrap_err();
-        assert_eq!(err.to_string(), "clear() can only be called inside on_draw()");
+        assert_eq!(
+            err.to_string(),
+            "clear() can only be called inside on_draw()"
+        );
     }
 
     #[test]

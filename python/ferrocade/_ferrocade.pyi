@@ -1,3 +1,5 @@
+import os
+from collections.abc import Iterator
 from typing import Final, final
 
 __version__: str
@@ -52,3 +54,66 @@ class Window:
         """Called once per displayed frame. Override to draw."""
     def on_update(self, delta_time: float) -> None:
         """Called at a fixed rate; `delta_time` equals `update_rate`. Override to update."""
+
+@final
+class Texture:
+    """A loaded image. Loading the same file again shares the same image data."""
+
+    def __init__(self, path: str | os.PathLike[str], *, filter: Filter | None = None) -> None:
+        """`filter` overrides the window's filter for this texture; `None` uses the window's."""
+
+    @property
+    def width(self) -> int:
+        """Width in pixels."""
+    @property
+    def height(self) -> int:
+        """Height in pixels."""
+    @property
+    def path(self) -> str:
+        """Canonical absolute path of the image file."""
+    @property
+    def filter(self) -> Filter | None:
+        """Filter override, or `None` to use the window's filter."""
+    def __eq__(self, other: object) -> bool: ...
+    def __hash__(self) -> int: ...
+
+class Sprite:
+    """An image placed in the window. Coordinates are pixels, origin bottom-left, y up."""
+
+    def __init__(
+        self,
+        texture: Texture | str | os.PathLike[str],
+        center_x: float = 0.0,
+        center_y: float = 0.0,
+        scale: float = 1.0,
+    ) -> None: ...
+
+    center_x: float
+    center_y: float
+    position: tuple[float, float]
+    """`(center_x, center_y)`; setting it updates both in one call."""
+    scale: float
+    angle: float
+    """Rotation in degrees (stored; rotation is not drawn yet)."""
+    texture: Texture
+    @property
+    def width(self) -> float:
+        """Drawn width in pixels: texture width × |scale|."""
+    @property
+    def height(self) -> float:
+        """Drawn height in pixels: texture height × |scale|."""
+
+@final
+class SpriteList:
+    """An ordered batch of sprites, drawn together. Later sprites draw on top."""
+
+    def __init__(self) -> None: ...
+    def append(self, sprite: Sprite) -> None: ...
+    def remove(self, sprite: Sprite) -> None: ...
+    def draw(self) -> None:
+        """Draw all sprites. Only valid inside `on_draw`."""
+    def __len__(self) -> int: ...
+    def __contains__(self, sprite: object) -> bool: ...
+    def __iter__(self) -> Iterator[Sprite]: ...
+
+def _debug_texture_disk_reads() -> int: ...
