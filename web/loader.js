@@ -98,10 +98,11 @@ async function main() {
   // SPIKE: hard-coded asset list; a real build needs an asset manifest or bundler.
   const assets = ["assets/images/ship.png"];
   for (const path of assets) writeFile(pyodide, path, await fetchBytes(`../${path}`));
-  for (const name of ["__init__.py", "color.py"]) {
-    writeFile(pyodide, `/home/pyodide/ferrocade/${name}`,
-              await fetchBytes(`python/ferrocade/${name}`));
-  }
+  // The browser package: its own __init__.py, plus the desktop package's color.py (one source).
+  writeFile(pyodide, "/home/pyodide/ferrocade/__init__.py",
+            await fetchBytes("python/ferrocade/__init__.py"));
+  writeFile(pyodide, "/home/pyodide/ferrocade/color.py",
+            await fetchBytes("../python/ferrocade/color.py"));
 
   const source = new TextDecoder().decode(await fetchBytes("../examples/01_centered_ship.py"));
   window.ferrocadeExampleSource = source; // lets the check script verify it is unchanged (W5)

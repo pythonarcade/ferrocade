@@ -132,7 +132,7 @@ module), and **revisit approach A** once upstream unblocks it (likely 2027).
 | Core `render` feature (data layer builds without wgpu) | Done in spike | No (useful for headless and Emscripten use) |
 | `crates/ferrocade-web` (wasm-bindgen Engine) | Done, **spike quality** | Yes: `SPIKE:` (no tests, u32 handle tables never reuse slots, no texture swap) |
 | Browser Python shim `web/python/ferrocade` | Done, **spike quality** | Yes: must become a real package that's tested and versioned with desktop |
-| `web/python/ferrocade/color.py` copy | Required before shipping web | Yes: share it with the desktop package |
+| ~~`web/python/ferrocade/color.py` copy~~ | **Done in Phase 1c**: the loader fetches the desktop `python/ferrocade/color.py` | — |
 | Hard-coded asset list in `web/loader.js` | Required before shipping web | Yes: needs an asset manifest or bundler |
 | Shared API test suite run against both bindings (desktop PyO3 and web shim) | Required before shipping web | No (new) |
 | winit web backend (or DOM events) for input | Required before Phase 4 on the web | No (new) |

@@ -72,23 +72,23 @@ US2 and US3 use it.
 
 **Independent Test**: `pytest tests/test_color.py` passes, and `node tools/web-check/check_colors.mjs` reports all 148 matching Chrome.
 
-- [ ] T008 [P] [US1] Write `tools/gen_css_colors.py`.
+- [X] T008 [P] [US1] Write `tools/gen_css_colors.py`.
   - It embeds the 148 CSS Color Level 4 keywords with their hex values, plus an **explicit keyword → UPPER_SNAKE name map** (e.g. `lightgoldenrodyellow` → `LIGHT_GOLDENROD_YELLOW`, `rebeccapurple` → `REBECCA_PURPLE`, `darkslategrey` → `DARK_SLATE_GREY`).
   - It writes `python/ferrocade/color.py`: a module docstring, then the constants sorted alphabetically as RGB int tuples, then `TRANSPARENT = (0, 0, 0, 0)` and `DEFAULT_BACKGROUND = (32, 32, 32)` in a separate "non-CSS" section, then `CSS_COLORS: dict[str, tuple[int, int, int]]` mapping each CSS keyword to its value (used by the checks).
   - It asserts that there are exactly 148 keywords and 148 unique names.
-- [ ] T009 [US1] Run `python tools/gen_css_colors.py` to regenerate `python/ferrocade/color.py`. Check that `GREEN == (0, 128, 0)`, `LIME == (0, 255, 0)`, `DARK_GRAY == (169, 169, 169)`, and `DEFAULT_BACKGROUND == (32, 32, 32)`.
-- [ ] T010 [P] [US1] Write `tests/test_color.py`, covering:
+- [X] T009 [US1] Run `python tools/gen_css_colors.py` to regenerate `python/ferrocade/color.py`. Check that `GREEN == (0, 128, 0)`, `LIME == (0, 255, 0)`, `DARK_GRAY == (169, 169, 169)`, and `DEFAULT_BACKGROUND == (32, 32, 32)`.
+- [X] T010 [P] [US1] Write `tests/test_color.py`, covering:
   - exactly 148 entries in `fc.color.CSS_COLORS`, and every entry exists as a module constant named by the map
   - all values are 3-tuples of ints in 0..255
   - every `*GRAY*` name has a `*GREY*` twin with an equal value
   - the spec values: `CORNFLOWER_BLUE == (100, 149, 237)`, `REBECCA_PURPLE == (102, 51, 153)`, `GREEN`, `LIME`, `DARK_GRAY`, `TRANSPARENT`, `DEFAULT_BACKGROUND`
   - `Window.clear()` with no argument still uses (32,32,32) (a display test that reads back via `RuntimeError`-free drawing; the pixel check is in T007's existing Rust tests)
-- [ ] T011 [P] [US1] Write `tools/web-check/check_colors.mjs` (puppeteer-core).
+- [X] T011 [P] [US1] Write `tools/web-check/check_colors.mjs` (puppeteer-core).
   - It loads `about:blank` in headless Chrome. For each keyword in a JSON dump of `CSS_COLORS` (produced by `python -c "import json, ferrocade.color as c; print(json.dumps(c.CSS_COLORS))"` and passed in through a file), it sets `div.style.color = keyword`, reads `getComputedStyle(div).color`, and compares the result with the Python value.
   - It also enumerates a hard-coded check that no extra keywords exist.
   - It prints mismatches, and exits non-zero on any mismatch or a count ≠ 148.
-- [ ] T012 [US1] Use a single source for the web: delete `web/python/ferrocade/color.py`, and change `web/loader.js` to fetch `../python/ferrocade/color.py` into `/home/pyodide/ferrocade/color.py`. Remove the corresponding `SPIKE:` item from the web-spike engine-impact table in `docs/research/web-spike.md` (mark it "done in Phase 1c").
-- [ ] T013 [US1] Run `pytest tests/test_color.py` and `node tools/web-check/check_colors.mjs` (Q2, Q3). Record the results for T034.
+- [X] T012 [US1] Use a single source for the web: delete `web/python/ferrocade/color.py`, and change `web/loader.js` to fetch `../python/ferrocade/color.py` into `/home/pyodide/ferrocade/color.py`. Remove the corresponding `SPIKE:` item from the web-spike engine-impact table in `docs/research/web-spike.md` (mark it "done in Phase 1c").
+- [X] T013 [US1] Run `pytest tests/test_color.py` and `node tools/web-check/check_colors.mjs` (Q2, Q3). Record the results for T034.
 
 **Checkpoint**: US1 is complete. Named colors work everywhere `clear()` accepts a color.
 
@@ -125,7 +125,7 @@ US2 and US3 use it.
 
 ### Implementation for User Story 2
 
-- [ ] T017 [US2] Add the built-in shape atlas to `crates/ferrocade/src/texture.rs`.
+- [X] T017 [US2] Add the built-in shape atlas to `crates/ferrocade/src/texture.rs`.
   - `pub fn builtin_shapes() -> Arc<TextureData>` generates, once and cached under the key `PathBuf::from("<builtin:shapes>")`, a 1024×512 RGBA image. The left 512×512 is opaque white. The right 512×512 is a white disc centered at (768,256) with radius 254, using an anti-aliased alpha edge (alpha = clamp(radius + 0.5 − distance, 0, 1) × 255) on a transparent background.
   - Add `pub const RECT_UV: [f32;4] = [0.125, 0.25, 0.375, 0.75]` and `pub const CIRCLE_UV: [f32;4] = [0.5, 0.0, 1.0, 1.0]`.
 - [ ] T018 [US2] Add `pub fn create_rectangle(&mut self, w, h, color, cx, cy)` and `pub fn create_circle(&mut self, radius, color, cx, cy, filter: Option<Filter>)` to `crates/ferrocade/src/store.rs`. They call `create_shape` with `builtin_shapes()`, the right UV, `base_size` `(w,h)` or `(2r,2r)`, and the `TextureRef.filter` override (circles only). Validate the radius as for width and height.
