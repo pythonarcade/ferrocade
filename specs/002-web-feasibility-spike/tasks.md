@@ -32,13 +32,13 @@ description: "Task list for Phase 1b — Web Feasibility Spike"
 
 ## Phase 1: Setup
 
-- [ ] T001 Install the approach-B toolchain on Windows: `rustup target add wasm32-unknown-unknown` and `cargo install wasm-bindgen-cli --version 0.2.129` (it must match the `wasm-bindgen` version in `Cargo.lock`). Record the exact versions (`rustc --version`, `wasm-bindgen --version`) for the report.
-- [ ] T002 Scaffold `crates/ferrocade-web` and add it to the workspace `members` in `Cargo.toml`.
+- [X] T001 Install the approach-B toolchain on Windows: `rustup target add wasm32-unknown-unknown` and `cargo install wasm-bindgen-cli --version 0.2.129` (it must match the `wasm-bindgen` version in `Cargo.lock`). Record the exact versions (`rustc --version`, `wasm-bindgen --version`) for the report.
+- [X] T002 Scaffold `crates/ferrocade-web` and add it to the workspace `members` in `Cargo.toml`.
   - **`crates/ferrocade-web/Cargo.toml`:** `crate-type = ["cdylib", "rlib"]`, `publish = false`.
   - **Dependencies:** `ferrocade`, `wgpu` (workspace), `wasm-bindgen = "=0.2.129"`, `wasm-bindgen-futures`, `js-sys`, `web-sys` (features `HtmlCanvasElement`, `Window`, `Document`, `console`), `console_error_panic_hook`.
   - **`crates/ferrocade-web/src/lib.rs`:** wrap the whole crate body in `#![cfg(target_arch = "wasm32")]`, so `cargo build --workspace` on Windows still succeeds.
-- [ ] T003 [P] Add `spike/pyodide-wheel/target/`, `spike/pyodide-wheel/dist/` and `tools/web-check/node_modules/` to `.gitignore` (`web/pkg/` is already ignored).
-- [ ] T004 [P] Create the report skeleton `docs/research/web-spike.md`, with the sections from data-model.md "SpikeReport":
+- [X] T003 [P] Add `spike/pyodide-wheel/target/`, `spike/pyodide-wheel/dist/` and `tools/web-check/node_modules/` to `.gitignore` (`web/pkg/` is already ignored).
+- [X] T004 [P] Create the report skeleton `docs/research/web-spike.md`, with the sections from data-model.md "SpikeReport":
   1. Summary and recommendation, marked **Proposed (pending owner acceptance)**
   2. Per-approach findings (A, A′, B, C), each with `status` / `evidence` / `measurements` / `blockers` / `engine_impact` subsections
   3. Comparison
@@ -78,7 +78,7 @@ description: "Task list for Phase 1b — Web Feasibility Spike"
 
 ### Approach A: Pyodide wheel (owner-gated)
 
-- [ ] T010 [US1] **Owner gate.** Ask the owner for permission to install the approach-A toolchain in WSL2 Ubuntu 22.04's home directory: rustup (stable ≥ 1.93, target `wasm32-unknown-emscripten`), emsdk at Pyodide 314's Emscripten **5.0.3**, Python 3.14, and `pyodide-build`. That's a few GB.
+- [X] T010 [US1] **Owner gate.** Ask the owner for permission to install the approach-A toolchain in WSL2 Ubuntu 22.04's home directory: rustup (stable ≥ 1.93, target `wasm32-unknown-emscripten`), emsdk at Pyodide 314's Emscripten **5.0.3**, Python 3.14, and `pyodide-build`. That's a few GB.
   - Record the answer in `spike/pyodide-wheel/NOTES.md`.
   - **If declined:** set approach A's status to `blocked`, with desk evidence only (cite wgpu#10274, pyodide#6476, the winit platform error) and the note "hands-on not attempted: owner declined toolchain install". Skip T011–T015.
 - [ ] T011 [US1] Add a default-on Cargo feature `render` to `crates/ferrocade/Cargo.toml`. It gates the `render` and `platform` modules plus the `wgpu`/`winit`/`pollster` dependencies (`lib.rs` uses `#[cfg(feature = "render")]`).
