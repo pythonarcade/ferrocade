@@ -65,7 +65,7 @@ Each section resolves one Technical Context unknown or design question.
 **Decision**:
 - Native classes use `#[pyclass(subclass)]`.
 - `#[new]` accepts `(*args, **kwargs)` and creates a default-initialized object.
-- A Rust `__init__` method (supported by PyO3 0.29) takes the real arguments, so `class Game(fc.Window): def __init__(self): super().__init__(800, 600, "Ferrocade")` works as in the spec example.
+- A Rust `__init__` method (supported by PyO3 0.29) takes the real arguments, so `class Game(fc.Window): def __init__(self): super().__init__(800, 600, "Ferrocade", filter=fc.NEAREST)` works as in the spec example.
 - **Verify early (first implementation task)** that `__init__` works under `abi3-py313`. The PyO3 guide's `__init__` example is gated on non-limited-API builds, but that gate relates to subclassing `PyDict`, not to `__init__` itself.
 - **Fallback if it doesn't work:** thin pure-Python subclasses in `python/ferrocade/` define `__init__` and call a native `_init(...)`. Property access stays native either way.
 
