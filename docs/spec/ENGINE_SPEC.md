@@ -427,7 +427,9 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
   3. **Collision checks:** the time to detect all sprite-vs-sprite and sprite-vs-wall contacts each frame (Phase 5, in Rust).
 - **Builds on:** Phase 1c (walls and balls as shapes), Phase 2 (velocities, `SpriteList.update()`), Phase 3 (stress-test scenes, frame-time readout), and Phase 5 (Rust collision detection).
 - **Needs beyond the current phases** (to decide when the demo is specified):
-  - **Collision response:** "bouncing off each other" needs more than detection, namely reflecting or exchanging velocities on contact. Phase 5 is detect-only, and physics response is in the backlog. Options include a minimal built-in elastic bounce in Rust, or a response written in Python using the collision results (slower, but it shows the boundary-crossing cost).
+  - **Collision response:** "bouncing off each other" needs more than detection, namely reflecting or exchanging velocities on contact. Phase 5 is detect-only, and physics response is in the backlog.
+    - **Owner direction:** Python manages collisions (e.g. through `on_collision`-style events or a function returning colliding sprites), while Rust does the time-expensive parts: movement and detection. See the §11 question 6 options (Proposed: Rust built-in bounce plus batched enter/exit events to Python).
+    - **Demo idea:** a toggle between "bounce handled in Rust" and "bounce handled in Python from the collision results", so the frame-time difference shows the value of the hybrid design.
   - **Timing breakdown API:** engine-side per-frame timings for render, update, and collision. `FrameStats` from Phase 1c is a start.
   - **On-screen display of the numbers:** the title bar or console until text rendering exists, then an overlay.
   - **Controls:** add or remove sprites while running (e.g. keys from Phase 4) to find the limit.
@@ -468,10 +470,24 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 3. **Automatic hit boxes.** Generate a polygon from the texture's alpha channel (like Arcade), once per texture and cached alongside it.
 4. **Broad phase** (quickly finding candidate pairs): spatial hash grid (simple, good for similar-sized sprites), sort-and-sweep, or a BVH/quadtree (better for mixed sizes and static geometry).
 5. **Narrow phase** (exact shape tests): specialized circle/box tests, SAT for polygons, and GJK as a general fallback.
-6. **API style.**
-   - Queries: `ship.collides_with_list(asteroids)` returns the hits. Simple and explicit.
-   - Events: `on_collision_enter(a, b)` callbacks after each update. Convenient, but costs Python calls per event.
-   - Possibly both. Queries come first since they're simplest.
+6. **API style: hybrid, with Rust doing the heavy work and Python handling the game logic** *(owner direction, 2026-10-12; mechanism Proposed)*.
+   - **Principle:** movement and collision **detection** always run in Rust. Python is called only to *manage* collisions (game logic: score, sound, damage), never for the expensive per-frame work.
+   - **Ways to deliver collisions to Python** (brainstorm):
+
+     | # | Mechanism | Python calls per frame | Notes |
+     |---|---|---|---|
+     | 1 | Per-pair callback `on_collision(a, b)` | One per colliding pair | Convenient. The bottleneck at thousands of contacts. |
+     | 2 | Batched query `for a, b in sprites.collisions():` | One fetch plus a Python loop | Detection crosses the boundary once. |
+     | 3 | Enter/exit events `on_collision_enter/exit(a, b)` | Only when contact starts or ends | Unity-style. Resting contacts don't re-fire. |
+     | 4 | Built-in responses in Rust (`collision_response = fc.BOUNCE`, solid walls) | Zero for the response | The fast path for physics-like behavior. |
+     | 5 | Bulk index arrays (`collision_pairs()` returns NumPy arrays) | One | For vectorized code. Pairs with the §7 NumPy views. |
+
+   - **Proposed combination** (to decide when the collision phase is specified):
+     - Rust handles movement, detection, and **declared built-in responses** (#4: bounce, stop, solid).
+     - Python receives **enter/exit events** (#3), delivered in a batch after each update and never in the middle of it.
+     - **Batched queries** (#2) answer direct questions ("what is the ship touching?").
+     - **Layers and masks** (question 7) limit both what's checked and which pairs produce Python events.
+     - Per-pair every-frame callbacks (#1) are avoided by default.
 7. **Filtering.** Collision layers/masks (Unity/Godot style), so bullets don't test against other bullets.
 8. **Triggers vs. solid.** For Phase 5 everything is detect-only (triggers). A physical response (pushing apart, bouncing) belongs to a later physics system.
 9. **Build vs. use a crate.** `parry2d` (collision only) and `rapier2d` (full physics) are mature Rust options. Writing our own fits the "from scratch" goal and keeps it small. Using parry2d is much faster to build. Decide during research, and consider whether the crate works under WASM (it does in rapier's case).
@@ -564,6 +580,7 @@ ferrocade/                 # repo root
 | 2026-10-12 | Shape API: `fc.RectangleSprite` / `fc.CircleSprite` classes (extend `Sprite`) | Chosen over factory functions and built-in textures, because it suits subclassing |
 | 2026-10-12 | Circle edges follow the window filter, with a per-circle `filter=` override | Consistent with "no hidden default filter" |
 | 2026-10-12 | Add a performance showcase milestone after Phase 5: walls plus many bouncing sprites, showing render, move, and collision speed | Owner request; collision response and timing display to be decided (§10) |
+| 2026-10-12 | Collision direction: Rust does movement and detection, Python manages collisions (game logic) | Owner direction; delivery mechanism Proposed (§11 Q6: built-in Rust responses plus batched enter/exit events plus queries) |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
 | 2026-10-12 | Collision detection implemented in Rust | Design open (§11) |
 | 2026-10-12 | winit for windowing | Confirmed |
