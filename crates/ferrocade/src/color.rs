@@ -3,7 +3,7 @@
 use crate::{Error, Result};
 
 /// Background used when a frame has no `clear()` call.
-pub const DARK_GRAY: [u8; 4] = [32, 32, 32, 255];
+pub const DEFAULT_BACKGROUND: [u8; 4] = [32, 32, 32, 255];
 
 /// Validate a 3- or 4-component color (alpha defaults to 255).
 pub fn parse_rgba(components: &[i64]) -> Result<[u8; 4]> {

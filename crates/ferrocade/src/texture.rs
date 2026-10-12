@@ -110,3 +110,47 @@ fn decode(path: &Path, bytes: &[u8]) -> Result<Arc<TextureData>> {
 pub fn disk_reads() -> u64 {
     DISK_READS.load(Ordering::Relaxed)
 }
+
+/// Cache key of the built-in shape texture (never a real file path).
+pub const BUILTIN_SHAPES_KEY: &str = "<builtin:shapes>";
+/// Texture region for rectangles: inset into the white half, so filtering never samples edges.
+pub const RECT_UV: [f32; 4] = [0.125, 0.25, 0.375, 0.75];
+/// Texture region for circles: the disc in the right half.
+pub const CIRCLE_UV: [f32; 4] = [0.5, 0.0, 1.0, 1.0];
+
+/// The built-in shape texture used by rectangle and circle sprites, created on first use.
+///
+/// 1024×512: the left half is opaque white (rectangles), the right half a white disc with an
+/// anti-aliased edge (circles). Both shapes share it, so any mix of them batches together.
+pub fn builtin_shapes() -> Arc<TextureData> {
+    let key = PathBuf::from(BUILTIN_SHAPES_KEY);
+    let mut cache = CACHE.lock().unwrap();
+    if let Some(data) = cache.get(&key) {
+        return data.clone();
+    }
+    const W: u32 = 1024;
+    const H: u32 = 512;
+    let (cx, cy, radius) = (768.0f32, 256.0f32, 254.0f32);
+    let mut pixels = vec![0u8; (W * H * 4) as usize];
+    for y in 0..H {
+        for x in 0..W {
+            let alpha = if x < W / 2 {
+                1.0
+            } else {
+                let (dx, dy) = (x as f32 + 0.5 - cx, y as f32 + 0.5 - cy);
+                (radius + 0.5 - (dx * dx + dy * dy).sqrt()).clamp(0.0, 1.0)
+            };
+            let i = ((y * W + x) * 4) as usize;
+            pixels[i..i + 4].copy_from_slice(&[255, 255, 255, (alpha * 255.0).round() as u8]);
+        }
+    }
+    let data = Arc::new(TextureData {
+        id: TextureId(NEXT_ID.fetch_add(1, Ordering::Relaxed)),
+        path: key.clone(),
+        width: W,
+        height: H,
+        pixels: pixels.into(),
+    });
+    cache.insert(key, data.clone());
+    data
+}

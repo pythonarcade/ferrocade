@@ -19,6 +19,20 @@ pub struct PySprite {
 }
 
 impl PySprite {
+    /// An uninitialized sprite; subclasses (shape sprites) fill in the id in their `__init__`.
+    pub fn empty() -> Self {
+        Self { id: None }
+    }
+
+    /// Attach a newly created store sprite (used by shape-sprite subclasses).
+    pub fn set_id(&mut self, id: SpriteId) -> PyResult<()> {
+        if self.id.is_some() {
+            return Err(PyRuntimeError::new_err("sprite was already initialized"));
+        }
+        self.id = Some(id);
+        Ok(())
+    }
+
     pub fn id(&self) -> PyResult<SpriteId> {
         self.id.ok_or_else(|| {
             PyRuntimeError::new_err(

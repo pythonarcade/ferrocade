@@ -63,7 +63,7 @@ fn render(renderer: &mut Renderer, store: &mut SpriteStore, commands: &[FrameCom
 }
 
 fn clear() -> FrameCommand {
-    FrameCommand::Clear(color::to_linear_f32(color::DARK_GRAY))
+    FrameCommand::Clear(color::to_linear_f32(color::DEFAULT_BACKGROUND))
 }
 
 #[test]

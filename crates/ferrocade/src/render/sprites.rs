@@ -8,12 +8,20 @@ use crate::instance::Instance;
 use crate::store::{ListId, SpriteStore};
 use crate::texture::Filter;
 
+/// Work done by the most recent frame (for tests and performance displays).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct FrameStats {
+    pub draw_calls: u32,
+    pub instances: u32,
+}
+
 pub struct SpritePipeline {
     pipeline: wgpu::RenderPipeline,
     globals: wgpu::Buffer,
     globals_bind_group: wgpu::BindGroup,
     textures: GpuTextures,
     lists: HashMap<ListId, GpuList>,
+    stats: FrameStats,
 }
 
 impl SpritePipeline {
@@ -80,6 +88,11 @@ impl SpritePipeline {
                 wgpu::VertexFormat::Float32x4,
                 std::mem::offset_of!(Instance, uv_rect),
             ),
+            attribute(
+                4,
+                wgpu::VertexFormat::Unorm8x4,
+                std::mem::offset_of!(Instance, color),
+            ),
         ];
         let instance_layout = wgpu::VertexBufferLayout {
             array_stride: std::mem::size_of::<Instance>() as u64,
@@ -119,6 +132,7 @@ impl SpritePipeline {
             globals_bind_group,
             textures,
             lists: HashMap::new(),
+            stats: FrameStats::default(),
         }
     }
 
@@ -138,6 +152,7 @@ impl SpritePipeline {
             [-1.0, -1.0, 0.0, 1.0],
         ];
         queue.write_buffer(&self.globals, 0, bytemuck::cast_slice(&projection));
+        self.stats = FrameStats::default();
         self.lists.retain(|id, _| store.contains_list(*id));
     }
 
@@ -161,7 +176,11 @@ impl SpritePipeline {
         }
     }
 
-    pub fn draw_list(&self, pass: &mut wgpu::RenderPass<'_>, id: ListId) {
+    pub fn stats(&self) -> FrameStats {
+        self.stats
+    }
+
+    pub fn draw_list(&mut self, pass: &mut wgpu::RenderPass<'_>, id: ListId) {
         let Some(gpu) = self.lists.get(&id) else {
             return;
         };
@@ -178,6 +197,8 @@ impl SpritePipeline {
             if let Some(bind_group) = self.textures.get(batch.texture.id, batch.filter) {
                 pass.set_bind_group(1, bind_group, &[]);
                 pass.draw(0..6, batch.instances.clone());
+                self.stats.draw_calls += 1;
+                self.stats.instances += batch.instances.len() as u32;
             }
         }
     }

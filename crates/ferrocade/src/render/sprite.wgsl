@@ -15,12 +15,22 @@ struct VertexIn {
     @location(1) size: vec2<f32>,
     @location(2) angle: f32,     // degrees; not applied yet
     @location(3) uv_rect: vec4<f32>,
+    @location(4) color: vec4<f32>,  // tint, sRGB in 0..1 (from Unorm8x4)
 };
 
 struct VertexOut {
     @builtin(position) position: vec4<f32>,
     @location(0) uv: vec2<f32>,
+    @location(1) color: vec4<f32>,  // tint, linear
 };
+
+// Exact sRGB -> linear conversion, so a white texture tinted (r, g, b) writes back exactly
+// (r, g, b) through the sRGB render target.
+fn srgb_to_linear(c: vec3<f32>) -> vec3<f32> {
+    let low = c / 12.92;
+    let high = pow((c + vec3<f32>(0.055)) / 1.055, vec3<f32>(2.4));
+    return select(high, low, c <= vec3<f32>(0.04045));
+}
 
 @vertex
 fn vs_main(in: VertexIn) -> VertexOut {
@@ -39,10 +49,11 @@ fn vs_main(in: VertexIn) -> VertexOut {
         mix(in.uv_rect.x, in.uv_rect.z, corner.x),
         mix(in.uv_rect.w, in.uv_rect.y, corner.y),
     );
+    out.color = vec4<f32>(srgb_to_linear(in.color.rgb), in.color.a);
     return out;
 }
 
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
-    return textureSample(sprite_texture, sprite_sampler, in.uv);
+    return textureSample(sprite_texture, sprite_sampler, in.uv) * in.color;
 }

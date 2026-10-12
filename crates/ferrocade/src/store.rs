@@ -12,8 +12,11 @@ use slotmap::SlotMap;
 use smallvec::SmallVec;
 
 use crate::instance::Instance;
-use crate::texture::TextureRef;
+use crate::texture::{self, Filter, TextureRef};
 use crate::{Error, Result};
+
+/// Default tint: leaves textures unchanged.
+pub const WHITE: [u8; 4] = [255, 255, 255, 255];
 
 slotmap::new_key_type! {
     pub struct SpriteId;
@@ -27,8 +30,30 @@ pub struct SpriteState {
     pub scale: f64,
     pub angle: f64,
     pub texture: TextureRef,
+    /// Tint, RGBA 0-255 (sRGB). White leaves the texture unchanged.
+    pub color: [u8; 4],
+    /// Own size for shape sprites; `None` means "use the texture's size".
+    pub base_size: Option<(f64, f64)>,
+    /// Texture region to draw (u0, v0, u1, v1).
+    pub uv_rect: [f32; 4],
     /// Every list containing this sprite, with the sprite's slot in that list.
     memberships: SmallVec<[(ListId, u32); 2]>,
+}
+
+impl SpriteState {
+    /// Drawn size in pixels: base size (or texture size) × |scale|.
+    pub fn drawn_size(&self) -> (f64, f64) {
+        let (w, h) = self.base_size.unwrap_or((
+            self.texture.data.width as f64,
+            self.texture.data.height as f64,
+        ));
+        let scale = self.scale.abs();
+        (w * scale, h * scale)
+    }
+
+    pub fn is_shape(&self) -> bool {
+        self.base_size.is_some()
+    }
 }
 
 #[derive(Debug, Default)]
@@ -123,8 +148,88 @@ impl SpriteStore {
             scale: check_finite("scale", scale)?,
             angle: 0.0,
             texture,
+            color: WHITE,
+            base_size: None,
+            uv_rect: [0.0, 0.0, 1.0, 1.0],
             memberships: SmallVec::new(),
         }))
+    }
+
+    /// Create a sprite with its own size and texture region (shape sprites).
+    pub fn create_shape(
+        &mut self,
+        texture: TextureRef,
+        uv_rect: [f32; 4],
+        base_size: (f64, f64),
+        color: [u8; 4],
+        center_x: f64,
+        center_y: f64,
+    ) -> Result<SpriteId> {
+        for (name, v) in [("width", base_size.0), ("height", base_size.1)] {
+            if !(v.is_finite() && v > 0.0) {
+                return Err(Error::InvalidArgument(format!(
+                    "shape {name} must be a finite number > 0, got {v}"
+                )));
+            }
+        }
+        let id = self.create_sprite(texture, center_x, center_y, 1.0)?;
+        let sprite = &mut self.sprites[id];
+        sprite.uv_rect = uv_rect;
+        sprite.base_size = Some(base_size);
+        sprite.color = color;
+        Ok(id)
+    }
+
+    /// A solid rectangle using the built-in shape texture.
+    pub fn create_rectangle(
+        &mut self,
+        width: f64,
+        height: f64,
+        color: [u8; 4],
+        center_x: f64,
+        center_y: f64,
+    ) -> Result<SpriteId> {
+        let texture = TextureRef {
+            data: texture::builtin_shapes(),
+            filter: None,
+        };
+        self.create_shape(
+            texture,
+            texture::RECT_UV,
+            (width, height),
+            color,
+            center_x,
+            center_y,
+        )
+    }
+
+    /// A solid circle using the built-in shape texture; `filter` overrides the window filter.
+    pub fn create_circle(
+        &mut self,
+        radius: f64,
+        color: [u8; 4],
+        center_x: f64,
+        center_y: f64,
+        filter: Option<Filter>,
+    ) -> Result<SpriteId> {
+        if !(radius.is_finite() && radius > 0.0) {
+            return Err(Error::InvalidArgument(format!(
+                "circle radius must be a finite number > 0, got {radius}"
+            )));
+        }
+        let texture = TextureRef {
+            data: texture::builtin_shapes(),
+            filter,
+        };
+        let d = radius * 2.0;
+        self.create_shape(
+            texture,
+            texture::CIRCLE_UV,
+            (d, d),
+            color,
+            center_x,
+            center_y,
+        )
     }
 
     /// Delete a sprite, removing it from every list that contains it.
@@ -266,6 +371,10 @@ impl SpriteStore {
     pub fn set_angle(&mut self, id: SpriteId, value: f64) -> Result<()> {
         let value = check_finite("angle", value)?;
         self.update(id, |s| s.angle = value)
+    }
+
+    pub fn set_color(&mut self, id: SpriteId, color: [u8; 4]) -> Result<()> {
+        self.update(id, |s| s.color = color)
     }
 
     pub fn set_texture(&mut self, id: SpriteId, texture: TextureRef) -> Result<()> {

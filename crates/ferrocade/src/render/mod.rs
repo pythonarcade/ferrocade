@@ -13,6 +13,7 @@ use crate::store::SpriteStore;
 use crate::texture::Filter;
 use crate::{Error, Result};
 
+pub use sprites::FrameStats;
 use sprites::SpritePipeline;
 
 const OFFSCREEN_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8UnormSrgb;
@@ -130,6 +131,11 @@ impl Renderer {
         })
     }
 
+    /// Draw calls and instances of the most recent frame.
+    pub fn last_frame_stats(&self) -> FrameStats {
+        self.sprites.stats()
+    }
+
     /// Name of the graphics backend in use (e.g. "Dx12", "Vulkan", "BrowserWebGpu", "Gl").
     pub fn backend_name(&self) -> String {
         format!("{:?}", self.backend)
@@ -188,7 +194,7 @@ impl Renderer {
 
         // A clear only takes effect when the next pass starts, so consecutive clears collapse
         // into the last one. Frames without a clear start from the default background.
-        let mut pending_clear = Some(color::to_linear_f32(color::DARK_GRAY));
+        let mut pending_clear = Some(color::to_linear_f32(color::DEFAULT_BACKGROUND));
         for command in commands {
             match *command {
                 FrameCommand::Clear(rgba) => pending_clear = Some(rgba),

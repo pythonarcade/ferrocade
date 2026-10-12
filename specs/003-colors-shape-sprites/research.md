@@ -114,6 +114,7 @@ bind-group machinery is reused.
   inherited from `Sprite`.
 - **Inherited `color`:** shape sprites take it as a required constructor argument. Image sprites
   default to white.
+- **Outcome (T001, 2026-10-12): confirmed.** `#[pyclass(extends = PySprite, subclass)]` with `#[new]` taking `(*args, **kwargs)` and `__init__(slf: PyRefMut<Self>, ...)`, which calls `slf.into_super().set_id(..)`, works under abi3-py313. A Python subclass of it is an `fc.Sprite` and works in `SpriteList`. The fallback isn't needed.
 - **Risk:** `extends=` combined with `subclass`, the `__init__` pattern, and abi3 must work
   together. **Verify first** (task 1), as R4 was in Phase 1. Fallback: Python subclasses in
   `python/ferrocade/` calling a native `_init_shape(...)`.

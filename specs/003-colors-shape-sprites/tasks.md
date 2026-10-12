@@ -33,7 +33,7 @@ US2 and US3 use it.
 
 ## Phase 1: Setup
 
-- [ ] T001 **R5 verification spike** (as Phase 1's R4).
+- [X] T001 **R5 verification spike** (as Phase 1's R4).
   - In `crates/ferrocade-py/src/lib.rs`, add a temporary `#[pyclass(extends = PySprite, subclass)] _ShapeProbe`.
   - Its `#[new]` has `#[pyo3(signature = (*_args, **_kwargs))]` and returns `PyClassInitializer::from(PySprite::empty()).add_subclass(_ShapeProbe {})`. Add `PySprite::empty()` in `crates/ferrocade-py/src/py_sprite.rs`. Its `__init__(self_, size: f64)` creates a store sprite from `assets/images/ship.png` and sets the base `PySprite` id.
   - Add `tests/test_shape_probe.py`, which checks that `class W(_ShapeProbe): def __init__(self): super().__init__(5.0)` works, that `isinstance(W(), fc.Sprite)` holds, that `W().center_x == 0.0`, and that the object can be appended to an `fc.SpriteList`.
@@ -47,20 +47,20 @@ US2 and US3 use it.
 
 **Purpose**: core tint support plus frame stats. Required by US2 (shapes are tinted white textures) and US3.
 
-- [ ] T002 Rename `color::DARK_GRAY` to `color::DEFAULT_BACKGROUND` (same value `[32, 32, 32, 255]`) in `crates/ferrocade/src/color.rs`, and update its uses in `crates/ferrocade/src/render/mod.rs`, `crates/ferrocade/tests/render_offscreen.rs`, and `crates/ferrocade-py/src/py_window.rs`.
-- [ ] T003 Change `crates/ferrocade/src/instance.rs` to the data-model.md layout: `center [f32;2]` @0, `size [f32;2]` @8, `angle f32` @16, **`color [u8;4]` @20**, `_pad [f32;2]` @24, `uv_rect [f32;4]` @32.
+- [X] T002 Rename `color::DARK_GRAY` to `color::DEFAULT_BACKGROUND` (same value `[32, 32, 32, 255]`) in `crates/ferrocade/src/color.rs`, and update its uses in `crates/ferrocade/src/render/mod.rs`, `crates/ferrocade/tests/render_offscreen.rs`, and `crates/ferrocade-py/src/py_window.rs`.
+- [X] T003 Change `crates/ferrocade/src/instance.rs` to the data-model.md layout: `center [f32;2]` @0, `size [f32;2]` @8, `angle f32` @16, **`color [u8;4]` @20**, `_pad [f32;2]` @24, `uv_rect [f32;4]` @32.
   - Keep the const assert that it's 48 bytes. Add const asserts on `offset_of!(Instance, color) == 20` and `offset_of!(Instance, uv_rect) == 32`.
   - `Instance::from_sprite` copies `sprite.color`, `sprite.uv_rect`, and the size `base_size.unwrap_or(texture size) × |scale|`.
-- [ ] T004 Extend `SpriteState` in `crates/ferrocade/src/store.rs`:
+- [X] T004 Extend `SpriteState` in `crates/ferrocade/src/store.rs`:
   - add `color: [u8; 4]` (default `[255,255,255,255]`), `base_size: Option<(f64, f64)>` (default `None`), and `uv_rect: [f32; 4]` (default `[0,0,1,1]`)
   - add `pub fn set_color(&mut self, id, rgba: [u8; 4]) -> Result<()>`, using the existing `update()` (so it marks dirty slots)
   - add `pub fn create_shape(&mut self, texture: TextureRef, uv_rect: [f32;4], base_size: (f64, f64), color: [u8;4], center_x, center_y) -> Result<SpriteId>`, which validates "w, h finite and > 0, otherwise `ValueError`" (`Error::InvalidArgument`) and that the centers are finite
-- [ ] T005 Update `crates/ferrocade/src/render/sprite.wgsl`.
+- [X] T005 Update `crates/ferrocade/src/render/sprite.wgsl`.
   - Add `@location(4) color: vec4<f32>` (fed by `Unorm8x4`), pass it to the fragment stage, and convert RGB from sRGB to linear with the exact piecewise function (`c <= 0.04045 ? c/12.92 : pow((c+0.055)/1.055, 2.4)`), keeping alpha as is.
   - The fragment shader returns `textureSample(...) * color`.
   - In `crates/ferrocade/src/render/sprites.rs`, add vertex attribute 4: `Unorm8x4` at `offset_of!(Instance, color)`.
-- [ ] T006 Add frame statistics to `crates/ferrocade/src/render/mod.rs` and `crates/ferrocade/src/render/sprites.rs`: `pub struct FrameStats { pub draw_calls: u32, pub instances: u32 }`, filled during `render_frame` (each `pass.draw` adds one draw call and its instance count), plus `Renderer::last_frame_stats() -> FrameStats`.
-- [ ] T007 Foundation regression gate: `cargo test --workspace` (all Phase 1 offscreen pixel tests unchanged: white tint is ×1.0), `cargo check -p ferrocade-web --target wasm32-unknown-unknown`, `maturin develop`, and `pytest`. All must pass.
+- [X] T006 Add frame statistics to `crates/ferrocade/src/render/mod.rs` and `crates/ferrocade/src/render/sprites.rs`: `pub struct FrameStats { pub draw_calls: u32, pub instances: u32 }`, filled during `render_frame` (each `pass.draw` adds one draw call and its instance count), plus `Renderer::last_frame_stats() -> FrameStats`.
+- [X] T007 Foundation regression gate: `cargo test --workspace` (all Phase 1 offscreen pixel tests unchanged: white tint is ×1.0), `cargo check -p ferrocade-web --target wasm32-unknown-unknown`, `maturin develop`, and `pytest`. All must pass.
 
 **Checkpoint**: the tint works in the core, and the Phase 1 rendering is identical.
 

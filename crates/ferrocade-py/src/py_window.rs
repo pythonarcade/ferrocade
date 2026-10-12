@@ -112,7 +112,7 @@ impl PyWindow {
     fn clear(&self, color: Option<Vec<i64>>) -> PyResult<()> {
         let rgba = match color {
             Some(components) => color::parse_rgba(&components).py()?,
-            None => color::DARK_GRAY,
+            None => color::DEFAULT_BACKGROUND,
         };
         frame::push(FrameCommand::Clear(color::to_linear_f32(rgba)), "clear").py()
     }
