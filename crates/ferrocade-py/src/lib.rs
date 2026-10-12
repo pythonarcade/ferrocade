@@ -1,6 +1,7 @@
 //! Python bindings for Ferrocade, built as the `ferrocade._ferrocade` extension module.
 
 mod errors;
+mod py_collider;
 mod py_filter;
 mod py_shapes;
 mod py_sprite;
@@ -23,6 +24,10 @@ fn _ferrocade(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<py_sprite_list::PySpriteList>()?;
     m.add_class::<py_shapes::PyRectangleSprite>()?;
     m.add_class::<py_shapes::PyCircleSprite>()?;
+    m.add_class::<py_collider::PyCollider>()?;
+    m.add_class::<py_collider::PyCircleCollider>()?;
+    m.add_class::<py_collider::PyBoxCollider>()?;
+    m.add_class::<py_collider::PyAabbCollider>()?;
     m.add_function(wrap_pyfunction!(_debug_texture_disk_reads, m)?)?;
     m.add_function(wrap_pyfunction!(_key_table, m)?)?;
     Ok(())

@@ -174,3 +174,31 @@ def test_frame_stats_while_running():
     assert s.frame_ms == pytest.approx(16.7, abs=2), s
     assert 0 < s.render_cpu_ms < s.frame_ms, s
     assert (s.draw_calls, s.instances) == (1, 3), s
+
+
+def test_title_is_writable_before_run():
+    w = make_window()
+    assert w.title == "test"
+    w.title = "Hits: 3"
+    assert w.title == "Hits: 3"
+
+
+@pytest.mark.display
+def test_title_can_change_while_running():
+    class Titled(fc.Window):
+        def __init__(self):
+            super().__init__(320, 240, "start", filter=fc.NEAREST)
+            self.n = 0
+
+        def on_update(self, delta_time):
+            self.n += 1
+            self.title = f"update {self.n}"
+            if self.n == 5:
+                self.show_fps = True
+            if self.n > 20:
+                raise StopTest
+
+    w = Titled()
+    with pytest.raises(StopTest):
+        w.run()
+    assert w.title == "update 21"

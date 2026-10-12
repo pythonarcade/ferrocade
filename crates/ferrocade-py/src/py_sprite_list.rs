@@ -3,7 +3,7 @@
 use ferrocade::frame::{self, FrameCommand};
 use ferrocade::store::{self, ListId};
 use pyo3::prelude::*;
-use pyo3::types::PyList;
+use pyo3::types::{PyList, PyTuple};
 use pyo3::{PyTraverseError, PyVisit};
 
 use crate::errors::IntoPyResult;
@@ -14,6 +14,35 @@ pub struct PySpriteList {
     id: ListId,
     /// The member sprites' Python objects, in list order; keeps them alive while members.
     refs: Vec<Py<PySprite>>,
+}
+
+impl PySpriteList {
+    pub(crate) fn list_id(&self) -> ListId {
+        self.id
+    }
+
+    /// Member sprites' Python objects, in list order (slot `i` is `refs()[i]`).
+    pub(crate) fn refs(&self) -> &[Py<PySprite>] {
+        &self.refs
+    }
+
+    fn pairs<'py>(
+        py: Python<'py>,
+        pairs: &[(u32, u32)],
+        a: &[Py<PySprite>],
+        b: &[Py<PySprite>],
+    ) -> PyResult<Bound<'py, PyList>> {
+        let tuples = pairs
+            .iter()
+            .map(|&(i, j)| {
+                PyTuple::new(
+                    py,
+                    [a[i as usize].clone_ref(py), b[j as usize].clone_ref(py)],
+                )
+            })
+            .collect::<PyResult<Vec<_>>>()?;
+        PyList::new(py, tuples)
+    }
 }
 
 #[pymethods]
@@ -53,6 +82,23 @@ impl PySpriteList {
     /// Draw every sprite, in order. Only valid inside `on_draw()`.
     fn draw(&self) -> PyResult<()> {
         frame::push(FrameCommand::DrawList(self.id), "draw").py()
+    }
+
+    /// Every touching `(sprite from this list, sprite from others)` pair once, in list order.
+    /// A sprite in both lists is never paired with itself. One engine call.
+    fn collisions_with<'py>(
+        &self,
+        py: Python<'py>,
+        others: PyRef<'py, PySpriteList>,
+    ) -> PyResult<Bound<'py, PyList>> {
+        let pairs = store::global().list_vs_list(self.id, others.id).py()?;
+        Self::pairs(py, &pairs, &self.refs, &others.refs)
+    }
+
+    /// Every touching pair within this list once, as `(earlier, later)` in list order.
+    fn collisions<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
+        let pairs = store::global().within_list(self.id).py()?;
+        Self::pairs(py, &pairs, &self.refs, &self.refs)
     }
 
     fn __len__(&self) -> usize {

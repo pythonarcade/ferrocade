@@ -12,6 +12,7 @@ values in Python.
 import enum
 import os
 import traceback
+import weakref
 
 import js
 from pyodide.ffi import JsException, create_proxy
@@ -23,7 +24,11 @@ __version__ = "0.1.0-web-spike"
 __all__ = [
     "LINEAR",
     "NEAREST",
+    "AABBCollider",
+    "BoxCollider",
+    "CircleCollider",
     "CircleSprite",
+    "Collider",
     "Filter",
     "FrameStats",
     "RectangleSprite",
@@ -96,7 +101,14 @@ class Window:
 
     width = property(lambda self: self._width)
     height = property(lambda self: self._height)
-    title = property(lambda self: self._title)
+    @property
+    def title(self):
+        return self._title
+
+    @title.setter
+    def title(self, value):
+        self._title = str(value)
+        self._title_refreshed = 0.0  # refresh the tab title on the next frame
     filter = property(lambda self: self._filter)
     update_rate = property(lambda self: self._update_rate)
 
@@ -309,6 +321,30 @@ class Sprite:
     def height(self):
         return self._base_size()[1] * abs(self.scale)
 
+    @property
+    def collider(self):
+        return getattr(self, "_collider", None)
+
+    @collider.setter
+    def collider(self, value):
+        if value is not None and not isinstance(value, Collider):
+            raise TypeError(f"collider must be a ferrocade.Collider or None, not {type(value).__name__}")
+        _call(_engine.set_sprite_collider, self._id, -1 if value is None else value._id)
+        old = getattr(self, "_collider", None)
+        if old is not None and old is not value:
+            old._owner = None
+        if value is not None:
+            value._owner = weakref.ref(self)
+        self._collider = value
+
+    def collides_with(self, other):
+        return bool(_call(_engine.collides, self._id, other._id))
+
+    def collides_with_list(self, sprites):
+        slots = _call(_engine.collides_with_list, self._id, sprites._id)
+        members = sprites._sprites
+        return [members[i] for i in slots]
+
     def __del__(self):
         engine_id = getattr(self, "_id", None)
         if engine_id is not None:
@@ -407,6 +443,16 @@ class SpriteList:
     def draw(self):
         _call(_engine.draw_list, self._id)
 
+    def collisions_with(self, others):
+        flat = _call(_engine.collisions_with, self._id, others._id)
+        a, b = self._sprites, others._sprites
+        return [(a[flat[k]], b[flat[k + 1]]) for k in range(0, len(flat), 2)]
+
+    def collisions(self):
+        flat = _call(_engine.collisions, self._id)
+        s = self._sprites
+        return [(s[flat[k]], s[flat[k + 1]]) for k in range(0, len(flat), 2)]
+
     def __len__(self):
         return len(self._sprites)
 
@@ -420,3 +466,94 @@ class SpriteList:
         engine_id = getattr(self, "_id", None)
         if engine_id is not None:
             _engine.destroy_list(engine_id)
+
+
+class Collider:
+    """Base class of the colliders. Sizes and offsets are in the sprite's unscaled pixels."""
+
+    _kind = None
+
+    def _create(self, a, b, offset):
+        ox, oy = offset
+        self._owner = None
+        self._id = _call(_engine.create_collider, self._kind, float(a), float(b), float(ox), float(oy))
+        self._a, self._b, self._offset = float(a), float(b), (float(ox), float(oy))
+
+    @property
+    def offset(self):
+        return self._offset
+
+    @offset.setter
+    def offset(self, value):
+        x, y = value
+        _call(_engine.set_collider_offset, self._id, float(x), float(y))
+        self._offset = (float(x), float(y))
+
+    @property
+    def sprite(self):
+        return self._owner() if self._owner is not None else None
+
+    def _set_size(self, a, b):
+        _call(_engine.set_collider_shape, self._id, self._kind, float(a), float(b))
+        self._a, self._b = float(a), float(b)
+
+    def __del__(self):
+        engine_id = getattr(self, "_id", None)
+        if engine_id is not None:
+            _engine.destroy_collider(engine_id)
+
+
+class CircleCollider(Collider):
+    """A circle collider; its offset rotates with the sprite."""
+
+    _kind = "circle"
+
+    def __init__(self, radius, *, offset=(0.0, 0.0)):
+        self._create(radius, 0.0, offset)
+
+    @property
+    def radius(self):
+        return self._a
+
+    @radius.setter
+    def radius(self, value):
+        self._set_size(value, 0.0)
+
+    def __repr__(self):
+        return f"CircleCollider(radius={self._a:g})"
+
+
+class _BoxBase(Collider):
+    def __init__(self, width, height, *, offset=(0.0, 0.0)):
+        self._create(width, height, offset)
+
+    @property
+    def width(self):
+        return self._a
+
+    @width.setter
+    def width(self, value):
+        self._set_size(value, self._b)
+
+    @property
+    def height(self):
+        return self._b
+
+    @height.setter
+    def height(self, value):
+        self._set_size(self._a, value)
+
+    def __repr__(self):
+        return f"{type(self).__name__}(width={self._a:g}, height={self._b:g})"
+
+
+class BoxCollider(_BoxBase):
+    """A box collider that rotates with its sprite (its offset rotates too)."""
+
+    _kind = "box"
+
+
+class AABBCollider(_BoxBase):
+    """An axis-aligned box collider: it never rotates, and neither does its offset."""
+
+    _kind = "aabb"

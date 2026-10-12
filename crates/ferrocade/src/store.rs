@@ -11,6 +11,8 @@ use std::sync::{LazyLock, Mutex, MutexGuard};
 use slotmap::SlotMap;
 use smallvec::SmallVec;
 
+use crate::collision::query::CollisionCache;
+use crate::collision::{self, Collider, ColliderId, Shape};
 use crate::instance::Instance;
 use crate::texture::{self, Filter, TextureRef};
 use crate::{Error, Result};
@@ -41,6 +43,8 @@ pub struct SpriteState {
     pub base_size: Option<(f64, f64)>,
     /// Texture region to draw (u0, v0, u1, v1).
     pub uv_rect: [f32; 4],
+    /// The attached collider, if any (colliders are attached explicitly).
+    pub collider: Option<ColliderId>,
     /// Every list containing this sprite, with the sprite's slot in that list.
     memberships: SmallVec<[(ListId, u32); 2]>,
 }
@@ -54,6 +58,11 @@ impl SpriteState {
         ));
         let scale = self.scale.abs();
         (w * scale, h * scale)
+    }
+
+    /// Every list containing this sprite, with the sprite's slot in that list.
+    pub fn memberships(&self) -> &[(ListId, u32)] {
+        &self.memberships
     }
 
     pub fn is_shape(&self) -> bool {
@@ -71,6 +80,10 @@ pub struct ListState {
     dirty: Option<Range<usize>>,
     /// Bumped whenever the order, membership, or textures change (batches must be rebuilt).
     structure_version: u64,
+    /// Bumped on any change that can affect collisions (sprite moves, membership, colliders);
+    /// the collision cache is rebuilt when it differs from the cached version.
+    pub(crate) content_version: u64,
+    pub(crate) collision: CollisionCache,
 }
 
 impl ListState {
@@ -99,7 +112,12 @@ impl ListState {
         self.dirty.take()
     }
 
+    pub fn content_version(&self) -> u64 {
+        self.content_version
+    }
+
     fn mark_dirty(&mut self, range: Range<usize>) {
+        self.content_version += 1;
         if range.is_empty() {
             return;
         }
@@ -112,8 +130,9 @@ impl ListState {
 
 #[derive(Default)]
 pub struct SpriteStore {
-    sprites: SlotMap<SpriteId, SpriteState>,
-    lists: SlotMap<ListId, ListState>,
+    pub(crate) sprites: SlotMap<SpriteId, SpriteState>,
+    pub(crate) lists: SlotMap<ListId, ListState>,
+    pub(crate) colliders: SlotMap<ColliderId, Collider>,
 }
 
 static GLOBAL: LazyLock<Mutex<SpriteStore>> = LazyLock::new(|| Mutex::new(SpriteStore::new()));
@@ -159,6 +178,7 @@ impl SpriteStore {
             angular_velocity: 0.0,
             base_size: None,
             uv_rect: [0.0, 0.0, 1.0, 1.0],
+            collider: None,
             memberships: SmallVec::new(),
         }))
     }
@@ -249,7 +269,11 @@ impl SpriteStore {
         for list in lists {
             let _ = self.remove(list, id);
         }
-        self.sprites.remove(id);
+        if let Some(sprite) = self.sprites.remove(id)
+            && let Some(collider) = sprite.collider.and_then(|c| self.colliders.get_mut(c))
+        {
+            collider.attached_to = None;
+        }
     }
 
     pub fn sprite(&self, id: SpriteId) -> Result<&SpriteState> {
@@ -455,6 +479,92 @@ impl SpriteStore {
             list.structure_version += 1;
         }
         Ok(())
+    }
+
+    pub fn create_collider(&mut self, shape: Shape, offset: (f64, f64)) -> Result<ColliderId> {
+        collision::validate(&shape, offset)?;
+        Ok(self.colliders.insert(Collider {
+            shape,
+            offset,
+            attached_to: None,
+        }))
+    }
+
+    /// Delete a collider, detaching it from its sprite first.
+    pub fn destroy_collider(&mut self, id: ColliderId) {
+        if let Some(sprite) = self.colliders.get(id).and_then(|c| c.attached_to) {
+            let _ = self.attach_collider(sprite, None);
+        }
+        self.colliders.remove(id);
+    }
+
+    pub fn collider(&self, id: ColliderId) -> Result<&Collider> {
+        self.colliders
+            .get(id)
+            .ok_or_else(|| Error::InvalidArgument("collider no longer exists".into()))
+    }
+
+    pub fn set_collider_shape(&mut self, id: ColliderId, shape: Shape) -> Result<()> {
+        let offset = self.collider(id)?.offset;
+        collision::validate(&shape, offset)?;
+        self.colliders[id].shape = shape;
+        self.collider_changed(id);
+        Ok(())
+    }
+
+    pub fn set_collider_offset(&mut self, id: ColliderId, offset: (f64, f64)) -> Result<()> {
+        let shape = self.collider(id)?.shape;
+        collision::validate(&shape, offset)?;
+        self.colliders[id].offset = offset;
+        self.collider_changed(id);
+        Ok(())
+    }
+
+    /// Attach `collider` to `sprite` (replacing and detaching any previous one), or detach with
+    /// `None`. A collider can be attached to only one sprite at a time.
+    pub fn attach_collider(
+        &mut self,
+        sprite: SpriteId,
+        collider: Option<ColliderId>,
+    ) -> Result<()> {
+        let previous = self.sprite(sprite)?.collider;
+        if let Some(id) = collider {
+            match self.collider(id)?.attached_to {
+                Some(owner) if owner != sprite => {
+                    return Err(Error::InvalidArgument(
+                        "collider is already attached to another sprite".into(),
+                    ));
+                }
+                _ => {}
+            }
+        }
+        if previous == collider {
+            return Ok(());
+        }
+        if let Some(old) = previous.and_then(|c| self.colliders.get_mut(c)) {
+            old.attached_to = None;
+        }
+        if let Some(id) = collider {
+            self.colliders[id].attached_to = Some(sprite);
+        }
+        self.sprites[sprite].collider = collider;
+        self.bump_lists_of(sprite);
+        Ok(())
+    }
+
+    fn collider_changed(&mut self, id: ColliderId) {
+        if let Some(sprite) = self.colliders[id].attached_to {
+            self.bump_lists_of(sprite);
+        }
+    }
+
+    /// Invalidate the collision caches of every list containing `sprite`.
+    fn bump_lists_of(&mut self, sprite: SpriteId) {
+        if let Some(s) = self.sprites.get(sprite) {
+            for &(list, _) in &s.memberships {
+                self.lists[list].content_version += 1;
+            }
+        }
     }
 
     /// Apply a change to a sprite, then rewrite its instance in every list containing it.

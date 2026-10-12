@@ -55,8 +55,8 @@ class Window:
     @property
     def height(self) -> int:
         """Height in logical pixels (updates when the window is resized)."""
-    @property
-    def title(self) -> str: ...
+    title: str
+    """Window title; assign to change it (the FPS readout is appended when `show_fps` is on)."""
     @property
     def filter(self) -> Filter:
         """Filter used by textures that don't set their own."""
@@ -149,6 +149,15 @@ class Sprite:
     @property
     def height(self) -> float:
         """Drawn height in pixels: base size (or texture height) × |scale|."""
+    collider: Collider | None
+    """The attached collider, or `None`. Assign one to attach it (replacing any previous one);
+    assign `None` to detach. A collider can be attached to one sprite at a time."""
+    def collides_with(self, other: Sprite) -> bool:
+        """Whether this sprite's collider touches `other`'s (touching counts). `False` if either
+        has no collider, and for the sprite itself."""
+    def collides_with_list(self, sprites: SpriteList) -> list[Sprite]:
+        """The sprites in `sprites` whose colliders touch this sprite's, in list order (never
+        this sprite). One engine call; the result is a new list."""
 
 class RectangleSprite(Sprite):
     """A solid-color rectangle; no image needed."""
@@ -189,9 +198,53 @@ class SpriteList:
         """Move every sprite by its velocities over `delta_time` seconds."""
     def draw(self) -> None:
         """Draw all sprites. Only valid inside `on_draw`."""
+    def collisions_with(self, others: SpriteList) -> list[tuple[Sprite, Sprite]]:
+        """Every touching (sprite from this list, sprite from `others`) pair once, in list order.
+        A sprite in both lists is never paired with itself."""
+    def collisions(self) -> list[tuple[Sprite, Sprite]]:
+        """Every touching pair within this list once, as (earlier, later) in list order."""
     def __len__(self) -> int: ...
     def __contains__(self, sprite: object) -> bool: ...
     def __iter__(self) -> Iterator[Sprite]: ...
+
+class Collider:
+    """Base class of the colliders. Attach one with `sprite.collider = ...`.
+
+    Sizes and offsets are in the sprite's unscaled pixels and scale with `sprite.scale`.
+    """
+
+    offset: tuple[float, float]
+    """Center relative to the sprite center. Rotates with the sprite, except for `AABBCollider`."""
+    @property
+    def sprite(self) -> Sprite | None:
+        """The sprite this collider is attached to, or `None`."""
+
+class CircleCollider(Collider):
+    """A circle collider."""
+
+    def __init__(self, radius: float, *, offset: tuple[float, float] = (0.0, 0.0)) -> None:
+        """`radius` must be finite and >= 0 (unscaled sprite pixels)."""
+    radius: float
+
+class BoxCollider(Collider):
+    """A box collider that rotates with its sprite (its offset rotates too)."""
+
+    def __init__(
+        self, width: float, height: float, *, offset: tuple[float, float] = (0.0, 0.0)
+    ) -> None:
+        """`width` and `height` must be finite and >= 0 (unscaled sprite pixels)."""
+    width: float
+    height: float
+
+class AABBCollider(Collider):
+    """An axis-aligned box collider: it never rotates, and neither does its offset."""
+
+    def __init__(
+        self, width: float, height: float, *, offset: tuple[float, float] = (0.0, 0.0)
+    ) -> None:
+        """`width` and `height` must be finite and >= 0 (unscaled sprite pixels)."""
+    width: float
+    height: float
 
 def _debug_texture_disk_reads() -> int: ...
 def _key_table() -> list[tuple[str, int]]: ...

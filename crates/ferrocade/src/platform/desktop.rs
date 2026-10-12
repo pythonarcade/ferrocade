@@ -41,6 +41,8 @@ pub fn run<C: GameCallbacks>(
 
         state.reset_stats();
         state.reset_input();
+        // The window is created with the current title.
+        state.take_title_change();
         let mut app = App {
             config,
             state,
@@ -95,7 +97,7 @@ impl<C: GameCallbacks> App<'_, C> {
 
     fn create_window(&mut self, event_loop: &ActiveEventLoop) -> crate::Result<()> {
         let attributes = Window::default_attributes()
-            .with_title(self.config.title.clone())
+            .with_title(self.state.title())
             .with_inner_size(LogicalSize::new(self.config.width, self.config.height));
         let window = Arc::new(
             event_loop
@@ -176,11 +178,14 @@ impl<C: GameCallbacks> App<'_, C> {
             );
             if let Some(window) = &self.window {
                 let show = self.state.show_fps();
-                if let Some(snapshot) = rolled.filter(|_| show) {
-                    window.set_title(&fps_title(&self.config.title, &snapshot));
+                let changed = self.state.take_title_change().is_some();
+                let title = self.state.title();
+                if show && (rolled.is_some() || changed) {
+                    let snapshot = rolled.unwrap_or_else(|| self.state.frame_stats());
+                    window.set_title(&fps_title(&title, &snapshot));
                     self.fps_in_title = true;
-                } else if !show && self.fps_in_title {
-                    window.set_title(&self.config.title);
+                } else if !show && (self.fps_in_title || changed) {
+                    window.set_title(&title);
                     self.fps_in_title = false;
                 }
             }

@@ -13,6 +13,7 @@ use std::cell::RefCell;
 use std::path::Path;
 use std::rc::Rc;
 
+use ferrocade::collision::{ColliderId, Shape};
 use ferrocade::color;
 use ferrocade::frame::{self, FrameCommand};
 use ferrocade::input::{Key, Keyboard, RawKeyEvent};
@@ -26,6 +27,21 @@ use web_sys::{HtmlCanvasElement, KeyboardEvent};
 
 fn js_err(e: ferrocade::Error) -> JsError {
     JsError::new(&e.to_string())
+}
+
+fn parse_shape(kind: &str, a: f64, b: f64) -> Result<Shape, JsError> {
+    match kind {
+        "circle" => Ok(Shape::Circle { radius: a }),
+        "box" => Ok(Shape::Box {
+            width: a,
+            height: b,
+        }),
+        "aabb" => Ok(Shape::Aabb {
+            width: a,
+            height: b,
+        }),
+        other => Err(JsError::new(&format!("unknown collider kind {other:?}"))),
+    }
 }
 
 fn parse_filter(name: &str) -> Result<Option<Filter>, JsError> {
@@ -49,6 +65,7 @@ pub struct Engine {
     textures: Vec<TextureRef>,
     sprites: Vec<Option<SpriteId>>,
     lists: Vec<Option<ListId>>,
+    colliders: Vec<Option<ColliderId>>,
     /// Shared with the canvas key listeners.
     keyboard: Rc<RefCell<Keyboard>>,
 }
@@ -68,6 +85,14 @@ impl Engine {
             .copied()
             .flatten()
             .ok_or_else(|| JsError::new("sprite list no longer exists"))
+    }
+
+    fn collider(&self, handle: u32) -> Result<ColliderId, JsError> {
+        self.colliders
+            .get(handle as usize)
+            .copied()
+            .flatten()
+            .ok_or_else(|| JsError::new("collider no longer exists"))
     }
 
     fn texture(&self, handle: u32) -> Result<&TextureRef, JsError> {
@@ -126,6 +151,7 @@ impl Engine {
             textures: Vec::new(),
             sprites: Vec::new(),
             lists: Vec::new(),
+            colliders: Vec::new(),
             keyboard,
         })
     }
@@ -398,6 +424,90 @@ impl Engine {
         store::global()
             .remove(self.list(list)?, self.sprite(sprite)?)
             .map_err(js_err)
+    }
+
+    /// Create a collider: `kind` is "circle" (`a` = radius), "box" or "aabb" (`a` × `b`).
+    pub fn create_collider(
+        &mut self,
+        kind: &str,
+        a: f64,
+        b: f64,
+        offset_x: f64,
+        offset_y: f64,
+    ) -> Result<u32, JsError> {
+        let shape = parse_shape(kind, a, b)?;
+        let id = store::global()
+            .create_collider(shape, (offset_x, offset_y))
+            .map_err(js_err)?;
+        self.colliders.push(Some(id));
+        Ok((self.colliders.len() - 1) as u32)
+    }
+
+    pub fn set_collider_shape(
+        &self,
+        collider: u32,
+        kind: &str,
+        a: f64,
+        b: f64,
+    ) -> Result<(), JsError> {
+        store::global()
+            .set_collider_shape(self.collider(collider)?, parse_shape(kind, a, b)?)
+            .map_err(js_err)
+    }
+
+    pub fn set_collider_offset(&self, collider: u32, x: f64, y: f64) -> Result<(), JsError> {
+        store::global()
+            .set_collider_offset(self.collider(collider)?, (x, y))
+            .map_err(js_err)
+    }
+
+    pub fn destroy_collider(&mut self, collider: u32) {
+        if let Some(slot) = self.colliders.get_mut(collider as usize)
+            && let Some(id) = slot.take()
+        {
+            store::global().destroy_collider(id);
+        }
+    }
+
+    /// Attach a collider to a sprite (`collider` = -1 detaches).
+    pub fn set_sprite_collider(&self, sprite: u32, collider: i32) -> Result<(), JsError> {
+        let collider = if collider < 0 {
+            None
+        } else {
+            Some(self.collider(collider as u32)?)
+        };
+        store::global()
+            .attach_collider(self.sprite(sprite)?, collider)
+            .map_err(js_err)
+    }
+
+    pub fn collides(&self, a: u32, b: u32) -> Result<bool, JsError> {
+        store::global()
+            .collides(self.sprite(a)?, self.sprite(b)?)
+            .map_err(js_err)
+    }
+
+    /// Slots in `list` touching `sprite`, ascending.
+    pub fn collides_with_list(&self, sprite: u32, list: u32) -> Result<Vec<u32>, JsError> {
+        store::global()
+            .sprite_vs_list(self.sprite(sprite)?, self.list(list)?)
+            .map_err(js_err)
+    }
+
+    /// Touching pairs as flat `[slot_a, slot_b, ...]`.
+    pub fn collisions_with(&self, list_a: u32, list_b: u32) -> Result<Vec<u32>, JsError> {
+        let pairs = store::global()
+            .list_vs_list(self.list(list_a)?, self.list(list_b)?)
+            .map_err(js_err)?;
+        Ok(pairs.into_iter().flat_map(|(i, j)| [i, j]).collect())
+    }
+
+    /// Touching pairs within `list` as flat `[earlier, later, ...]`.
+    pub fn collisions(&self, list: u32) -> Result<Vec<u32>, JsError> {
+        let pairs = store::global()
+            .within_list(self.list(list)?)
+            .map_err(js_err)?;
+        Ok(pairs.into_iter().flat_map(|(i, j)| [i, j]).collect())
     }
 
     /// Queue a list for drawing. Only valid between `begin_frame` and `end_frame`.

@@ -1,5 +1,5 @@
 // SPIKE: load the web example in headless Chrome/Edge and report what happened.
-// Usage: node check.mjs [url] [--browser=chrome|edge] [--fresh] [--motion] [--keys]
+// Usage: node check.mjs [url] [--browser=chrome|edge] [--fresh] [--motion] [--keys] [--collisions]
 // Prints a JSON summary (backend, time-to-ship, centering, bytes by kind) and saves a screenshot.
 import fs from "node:fs";
 import os from "node:os";
@@ -101,11 +101,27 @@ if (args.includes("--keys")) {
   if (!ok) outcome = "keys-failed";
 }
 
+// --collisions: fly right for 2 s through the 05_collisions asteroid field; the hit count in the
+// page title must go up.
+let collisions = null;
+if (args.includes("--collisions")) {
+  await page.focus("#game");
+  const hits = () => page.evaluate(() => Number((document.title.match(/hits: (\d+)/) ?? [0, -1])[1]));
+  const before = await hits();
+  await page.keyboard.down("ArrowRight");
+  await new Promise((r) => setTimeout(r, 2000));
+  await page.keyboard.up("ArrowRight");
+  await new Promise((r) => setTimeout(r, 300));
+  const after = await hits();
+  collisions = { before, after, title: await page.evaluate(() => document.title) };
+  if (!(before >= 0 && after > before)) outcome = "collisions-failed";
+}
+
 const pick = (prefix) => console_.find((l) => l.includes(prefix)) ?? null;
 const summary = {
   url, browser: browserName, outcome,
   backend: pick("backend="), timeToShip: pick("ship-visible"), centering: pick("centering"),
-  exampleUnchanged, drawCalls, motion, keys, bytes, errorText: errorText || null, screenshot: shot,
+  exampleUnchanged, drawCalls, motion, keys, collisions, bytes, errorText: errorText || null, screenshot: shot,
   console: console_.slice(0, 40),
 };
 console.log(JSON.stringify(summary, null, 2));

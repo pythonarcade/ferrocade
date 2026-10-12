@@ -47,6 +47,9 @@ struct Inner {
     stats: RollingStats,
     show_fps: bool,
     keyboard: Keyboard,
+    /// The current title (set by the game), and whether the window still needs to show it.
+    title: String,
+    title_changed: bool,
 }
 
 /// Frame statistics averaged over the last ~1 second (draw counts are from the last frame).
@@ -182,6 +185,23 @@ impl WindowState {
 
     pub fn is_key_held(&self, key: Key) -> bool {
         self.0.lock().unwrap().keyboard.is_held(key)
+    }
+
+    pub fn title(&self) -> String {
+        self.0.lock().unwrap().title.clone()
+    }
+
+    /// Change the title; the running window applies it on its next frame.
+    pub fn set_title(&self, title: &str) {
+        let mut s = self.0.lock().unwrap();
+        s.title = title.to_string();
+        s.title_changed = true;
+    }
+
+    /// The new title if it changed since the last call.
+    pub fn take_title_change(&self) -> Option<String> {
+        let mut s = self.0.lock().unwrap();
+        std::mem::take(&mut s.title_changed).then(|| s.title.clone())
     }
 
     pub fn show_fps(&self) -> bool {

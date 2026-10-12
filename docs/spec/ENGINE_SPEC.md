@@ -72,8 +72,8 @@ We compared the class structure of other engines:
 #### `Window`
 - Opens an OS window with a wgpu surface and owns the main loop.
 - Constructor: `Window(width, height, title, *, filter, update_rate=1/60)`. `filter` is **required** (see "Texture filtering" below).
-- Properties: `width`, `height`, `filter`
-- Methods: `run()` (blocks and runs the event loop), `clear(color=...)`
+- Properties: `width`, `height`, `filter`, `title` (writable since Phase 5), `frame_stats`, `show_fps`
+- Methods: `run()` (blocks and runs the event loop), `clear(color=...)`, `is_key_pressed(key)` (Phase 4)
 - Overridable callbacks: `on_draw()` (once per displayed frame), `on_update(delta_time)` (fixed rate; `delta_time` == `update_rate`)
 - Rust side: winit event loop, wgpu device/queue/surface, frame presentation.
 
@@ -89,11 +89,12 @@ We compared the class structure of other engines:
 - Constructor: `Sprite(texture, center_x=0, center_y=0, scale=1.0)`, where `texture` is either a `Texture` or a file path (a path is loaded through the texture cache).
 - Properties: `texture` (can be reassigned, e.g. to swap images), `center_x`, `center_y`, `position` (tuple; sets both in one call), `scale`, `angle` (degrees; can be stubbed in v1), `width`, `height` (texture size × scale)
 - Motion properties (per second, see §8): `velocity_x`, `velocity_y`, `angular_velocity`. They're not needed for the v1 goal, but the storage is planned from the start.
+- Collisions (Phase 5): `collider` (attach a `CircleCollider` / `BoxCollider` / `AABBCollider`, or `None`), `collides_with(other) -> bool`, `collides_with_list(sprite_list) -> list[Sprite]`.
 - Rust side: transform data plus a texture handle.
 
 #### `SpriteList`
 - Holds sprites and draws them in a batch.
-- Methods: `append(sprite)`, `remove(sprite)`, `draw()`, `len()`
+- Methods: `append(sprite)`, `remove(sprite)`, `update(delta_time)`, `draw()`, `len()`; collisions (Phase 5): `collisions_with(other_list)`, `collisions()` (lists of sprite pairs)
 - Rust side: an instance buffer of sprite transforms, with one draw call per texture.
 
 ### Image formats (decided)
@@ -425,6 +426,7 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 - **Later in this area:** mouse (with coordinates flipped to bottom-left, §5), gamepad.
 
 ### Phase 5: Collisions
+- **Status (2026-10-12): implemented** on desktop and web (WebGPU and WebGL2); targets met. See `docs/research/phase5-validation.md`. Benchmark (release, 10,000 moving colliders): all pairs in one list **1.53 ms** median (target < 2 ms); one sprite vs. 10,000 **0.24 ms** (target < 0.5 ms). Example: `examples/05_collisions.py`. Manual checks pending the owner.
 - **Goal:** detect collisions between the ship and other sprites (e.g. asteroids or walls).
 - **Proves:** a Rust collision system that is fast enough for the Phase 3 sprite counts.
 - **Requirement:** all collision detection runs in **Rust**. Python only receives results.
@@ -465,6 +467,8 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 4. **Results to Python:** **batched queries** first. Enter/exit events and built-in Rust responses (bounce/stop/solid) are ideas for the showcase, not committed.
 5. **Broad phase:** a **spatial hash grid per list**, rebuilt only when the list's positions changed (reusing dirty tracking); very small lists test every pair.
 6. **Implementation:** **written from scratch** (no `parry2d`/`rapier2d`).
+
+**Implementation (Phase 5, 2026-10-12):** `crates/ferrocade/src/collision/` (shapes, exact tests, grid, queries). Each list caches world shapes and bounds by a content version that every move, membership change, and collider change bumps. The grid's cell size is 2 × the median collider extent (at most 1024 cells per axis); objects covering more than 16 cells are kept in a separate list tested against everything; lists under 32 colliders test every pair. The grid is built lazily: pair queries always use it, while the first single-sprite query after a change scans the cached bounds linearly and the second builds the grid.
 
 The sections below are the original research and options, kept for reference.
 
@@ -633,6 +637,9 @@ ferrocade/                 # repo root
 | 2026-10-12 | Collider scale is coupled to `sprite.scale`; two box classes: `BoxCollider` (rotates) and `AABBCollider` (never rotates; name chosen by the owner) | Owner decisions; matches Unity/Godot/Arcade scaling; `docs/design/collision.md` |
 | 2026-10-12 | Collider offsets rotate with the sprite (`CircleCollider`, `BoxCollider`); `AABBCollider` offsets don't rotate | Owner accepted the proposal; `docs/design/collision.md` |
 | 2026-10-12 | Phase 5 speed target: all colliding pairs among 10,000 moving sprites in one list < 2 ms/frame; one sprite vs. 10,000 < 0.5 ms; collider debug view → backlog | Owner answers to the Phase 5 spec questions |
+| 2026-10-12 | `Window.title` is writable (the FPS readout is appended when `show_fps` is on) | Owner approved at Phase 5 planning; needed for the example's hit count |
+| 2026-10-12 | Phase 5 benchmark scene: 10,000 mixed colliders of 4-12 px over 1920×1080, moved every frame; times include building the Python result | Owner approved (research R9); the 800×600 dense variant is informational |
+| 2026-10-12 | Phase 5 implemented; collision grid built lazily for single-sprite queries (implementation detail found while meeting the 0.5 ms target) | `docs/research/phase5-validation.md` |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
 | 2026-10-12 | Collision detection implemented in Rust | Design open (§11) |
 | 2026-10-12 | winit for windowing | Confirmed |

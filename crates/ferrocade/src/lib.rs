@@ -3,6 +3,7 @@
 //! This crate has no Python dependency; the `ferrocade-py` crate wraps it for Python.
 
 pub mod assets;
+pub mod collision;
 pub mod color;
 pub mod error;
 pub mod frame;

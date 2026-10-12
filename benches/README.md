@@ -23,3 +23,14 @@ frame**. Work is engine update + game code + draw queueing + engine render CPU. 
 work time because vsync pins frame time at about 16.7 ms and hides headroom.
 
 Results go to `benches/results/` (gitignored). The summaries are in `docs/research/phase3-benchmarks.md`.
+
+## Collision benchmark (Phase 5)
+
+```powershell
+maturin develop --release
+python benches/collisions.py
+```
+
+It times collision queries on 10,000 moving colliders (4-12 px over 1920x1080, moved every frame)
+against the owner's targets: all pairs in one list < 2 ms, one sprite vs. the list < 0.5 ms (median).
+It exits 2 if a target is missed. Results: `docs/research/phase5-validation.md`.

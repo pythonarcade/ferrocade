@@ -93,6 +93,7 @@ impl PyWindow {
         }
         config.validate().py()?;
         self.state = WindowState::new(config.width, config.height);
+        self.state.set_title(&config.title);
         self.config = Some(config);
         Ok(())
     }
@@ -113,7 +114,16 @@ impl PyWindow {
 
     #[getter]
     fn title(&self) -> PyResult<String> {
-        Ok(self.config()?.title.clone())
+        self.config()?;
+        Ok(self.state.title())
+    }
+
+    /// Change the window title (applied on the next frame while running).
+    #[setter]
+    fn set_title(&self, title: String) -> PyResult<()> {
+        self.config()?;
+        self.state.set_title(&title);
+        Ok(())
     }
 
     /// Filter for textures that don't set their own.
