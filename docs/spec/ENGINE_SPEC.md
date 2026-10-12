@@ -444,7 +444,7 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
   3. **Collision checks:** the time to detect all sprite-vs-sprite and sprite-vs-wall contacts each frame (Phase 5, in Rust).
 - **Builds on:** Phase 1c (walls and balls as shapes), Phase 2 (velocities, `SpriteList.update()`), Phase 3 (stress-test scenes, frame-time readout), and Phase 5 (Rust collision detection).
 - **Decided (owner, 2026-10-12):**
-  - **Collision response in Python:** the demo bounces sprites in Python from the batched results of `collisions()` / `collisions_with()`. Rust does movement and detection. *(Whether built-in Rust responses are also part of the demo: pending owner clarification.)*
+  - **Collision response: both, with a toggle.** The main mode bounces in Rust through new **explicit calls** each update (e.g. `balls.bounce_off(walls)`, `balls.bounce_each_other()`). A key switches to bouncing in Python from the batched results of `collisions()` / `collisions_with()`, so the frame-time difference shows the value of the hybrid design. Rust always does movement and detection.
   - **Physics:** equal-mass, perfectly elastic circles bouncing off each other and off flat (rectangle) walls.
   - **Numbers display:** printed to the console about once per second (no on-screen display in this milestone).
   - **Timings come from the engine:** `frame_stats` gains engine-measured update and collision times (alongside the existing render CPU time).
@@ -645,7 +645,7 @@ ferrocade/                 # repo root
 | 2026-10-12 | `Window.title` is writable (the FPS readout is appended when `show_fps` is on) | Owner approved at Phase 5 planning; needed for the example's hit count |
 | 2026-10-12 | Phase 5 benchmark scene: 10,000 mixed colliders of 4-12 px over 1920×1080, moved every frame; times include building the Python result | Owner approved (research R9); the 800×600 dense variant is informational |
 | 2026-10-12 | Phase 5 implemented; collision grid built lazily for single-sprite queries (implementation detail found while meeting the 0.5 ms target) | `docs/research/phase5-validation.md` |
-| 2026-10-12 | Showcase: collision response in Python; equal-mass elastic circles and flat walls; numbers printed to the console; engine-reported update and collision timings in `frame_stats` | Owner answers to showcase items 1, 3, 4, 5; item 2 pending clarification |
+| 2026-10-12 | Showcase: bouncing in Rust (explicit calls such as `bounce_off`) with a toggle to bouncing in Python; equal-mass elastic circles and flat walls; numbers printed to the console; engine-reported update and collision timings in `frame_stats` | Owner answers to showcase items 1 (C), 2 (i), 3 (a), 4 (console), 5 (engine timings) |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
 | 2026-10-12 | Collision detection implemented in Rust | Design open (§11) |
 | 2026-10-12 | winit for windowing | Confirmed |
