@@ -24,7 +24,8 @@ detection only (no physical response).
 Python                     Rust core (crates/ferrocade/src/collision/)
 ──────────────────         ──────────────────────────────────────────────────────────
 CircleCollider ─┐          ColliderStore (slotmap): ColliderId → Collider { shape, offset, ... }
-BoxCollider    ─┤ attach   SpriteState gains `colliders` (Phase 5: at most one)
+BoxCollider    ─┤ attach
+AxisAligned... ─┤   SpriteState gains `colliders` (Phase 5: at most one)
                 ▼          world shapes: computed from sprite position/scale/angle + collider,
 sprite.collider            cached and recomputed when the sprite is dirty
                            per-list SpatialGrid: built from world-shape bounds, rebuilt when the
@@ -53,7 +54,7 @@ SpriteList queries ──────▶ list's positions changed since the last
 ```python
 ship.collider = fc.CircleCollider(radius=20)                 # attach (follows the sprite)
 wall.collider = fc.BoxCollider(width, height)                # rotates with the sprite (rotated box)
-tile.collider = fc.BoxCollider(32, 32, rotates=False)        # axis-aligned box (fast path)
+coin.collider = fc.AxisAlignedBoxCollider(32, 32)            # never rotates (axis-aligned box)
 
 ship.collides_with(rock) -> bool
 ship.collides_with_list(rocks) -> list[Sprite]               # one query, one crossing
@@ -62,8 +63,14 @@ balls.collisions() -> list[tuple[Sprite, Sprite]]            # pairs within one 
 ```
 
 - Colliders are attached explicitly (owner decision); sprites with no collider never collide.
-- Collider `offset=(x, y)` positions a shape relative to the sprite center (rotating with it).
-- Axis-aligned vs. rotated box: one `BoxCollider` class with `rotates=` (*Proposed*), or two classes.
+- **Scale is coupled (owner decision):** collider sizes and offsets are in the sprite's unscaled
+  pixels and are multiplied by `sprite.scale`, as in Unity, Godot, and Arcade. Changing a
+  collider's own size adjusts only the collider.
+- **Two box classes (owner decision):** `BoxCollider` rotates with the sprite; `AxisAlignedBoxCollider`
+  never rotates (for example, an upright hit box on a spinning coin). A `BoxCollider` whose sprite
+  angle is a multiple of 90° uses the fast axis-aligned test internally.
+- Collider `offset=(x, y)` positions a shape relative to the sprite center (*Proposed*: it rotates
+  with the sprite for `BoxCollider` and `CircleCollider`, and doesn't for `AxisAlignedBoxCollider`).
 
 ## 4. Open questions for the Phase 5 spec
 
@@ -71,7 +78,8 @@ balls.collisions() -> list[tuple[Sprite, Sprite]]            # pairs within one 
    No sprite, including shape sprites, gets a collider automatically.
 2. ~~Colliders without sprites~~ **Decided (owner, 2026-10-12): backlog, not Phase 5.** Phase 5
    colliders are always attached to a sprite.
-3. **Box naming and options:** the exact class names, and whether scale applies to colliders.
+3. ~~Box naming, scale~~ **Decided (owner, 2026-10-12): scale is coupled; two box classes,
+   `BoxCollider` (rotates) and `AxisAlignedBoxCollider` (never rotates).**
 4. **Query result types:** lists of sprites vs. a lighter result object; deduplication and ordering
    of pairs.
 5. **Performance targets:** for example, all pairs within a 10,000-sprite list in under N ms.
