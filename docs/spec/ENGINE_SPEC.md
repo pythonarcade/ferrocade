@@ -416,6 +416,24 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 - **Design:** open, needs research. See §11.
 - **Done when:** the ship collides correctly with many objects, and collision checks for Phase 3-scale lists fit within the frame budget.
 
+### Milestone: Performance showcase demo (after Phase 5)
+- **Requested by the owner (2026-10-12):** a demo that shows off Ferrocade's speed.
+- **Scene:**
+  - a window with a **wall around the border** (rectangle sprites, Phase 1c)
+  - **lots of small sprites** inside (circles and/or images), **all moving** (Phase 2) and **bouncing off the walls and off each other**
+- **It must visibly show three speeds:**
+  1. **Rendering:** how many sprites are drawn per frame, and the frame time or FPS.
+  2. **Moving:** the time to update every sprite's position each frame (Rust-side `update()`).
+  3. **Collision checks:** the time to detect all sprite-vs-sprite and sprite-vs-wall contacts each frame (Phase 5, in Rust).
+- **Builds on:** Phase 1c (walls and balls as shapes), Phase 2 (velocities, `SpriteList.update()`), Phase 3 (stress-test scenes, frame-time readout), and Phase 5 (Rust collision detection).
+- **Needs beyond the current phases** (to decide when the demo is specified):
+  - **Collision response:** "bouncing off each other" needs more than detection, namely reflecting or exchanging velocities on contact. Phase 5 is detect-only, and physics response is in the backlog. Options include a minimal built-in elastic bounce in Rust, or a response written in Python using the collision results (slower, but it shows the boundary-crossing cost).
+  - **Timing breakdown API:** engine-side per-frame timings for render, update, and collision. `FrameStats` from Phase 1c is a start.
+  - **On-screen display of the numbers:** the title bar or console until text rendering exists, then an overlay.
+  - **Controls:** add or remove sprites while running (e.g. keys from Phase 4) to find the limit.
+  - **Web version:** the same demo in the browser, to show the web per-call cost (web spike risk 2).
+- **Done when (draft):** thousands of sprites bounce correctly at the refresh rate on the dev machine, with live counts and the three timings shown, on desktop and in the browser.
+
 ### Later phases (unordered)
 - Sound, text rendering, sprite sheets/animation, views/scenes, camera, a physics response (bouncing off, pushing), and mouse/gamepad input.
 
@@ -545,6 +563,7 @@ ferrocade/                 # repo root
 | 2026-10-12 | New Phase 1c (colors + shape sprites) before Phase 2 | §10 |
 | 2026-10-12 | Shape API: `fc.RectangleSprite` / `fc.CircleSprite` classes (extend `Sprite`) | Chosen over factory functions and built-in textures, because it suits subclassing |
 | 2026-10-12 | Circle edges follow the window filter, with a per-circle `filter=` override | Consistent with "no hidden default filter" |
+| 2026-10-12 | Add a performance showcase milestone after Phase 5: walls plus many bouncing sprites, showing render, move, and collision speed | Owner request; collision response and timing display to be decided (§10) |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
 | 2026-10-12 | Collision detection implemented in Rust | Design open (§11) |
 | 2026-10-12 | winit for windowing | Confirmed |
