@@ -4,6 +4,8 @@ A 2D game engine with a Python API and a Rust core, rendering through wgpu. Plan
 
 > Early development: nothing runnable yet. See the [engine spec](docs/spec/ENGINE_SPEC.md) for the design and roadmap.
 
+**Repository:** https://github.com/pythonarcade/ferrocade
+
 ```python
 import ferrocade as fc
 
