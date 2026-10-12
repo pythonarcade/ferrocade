@@ -34,6 +34,8 @@ pub struct TextureData {
     pub height: u32,
     /// RGBA8, straight alpha, top row first.
     pub pixels: Arc<[u8]>,
+    /// Number of mip levels to generate on upload (1 = none). Only built-in textures use mips.
+    pub mip_levels: u32,
 }
 
 /// A texture as sprites use it: shared image data plus an optional filter override.
@@ -103,6 +105,7 @@ fn decode(path: &Path, bytes: &[u8]) -> Result<Arc<TextureData>> {
         width: rgba.width(),
         height: rgba.height(),
         pixels: rgba.into_raw().into(),
+        mip_levels: 1,
     }))
 }
 
@@ -115,13 +118,15 @@ pub fn disk_reads() -> u64 {
 pub const BUILTIN_SHAPES_KEY: &str = "<builtin:shapes>";
 /// Texture region for rectangles: inset into the white half, so filtering never samples edges.
 pub const RECT_UV: [f32; 4] = [0.125, 0.25, 0.375, 0.75];
-/// Texture region for circles: the disc in the right half.
-pub const CIRCLE_UV: [f32; 4] = [0.5, 0.0, 1.0, 1.0];
+/// Texture region for circles: exactly the disc in the right half (center 768,256, radius 200).
+pub const CIRCLE_UV: [f32; 4] = [568.0 / 1024.0, 56.0 / 512.0, 968.0 / 1024.0, 456.0 / 512.0];
 
 /// The built-in shape texture used by rectangle and circle sprites, created on first use.
 ///
 /// 1024×512: the left half is opaque white (rectangles), the right half a white disc with an
 /// anti-aliased edge (circles). Both shapes share it, so any mix of them batches together.
+/// It is mipmapped so circles drawn smaller than the disc stay smooth with linear filtering;
+/// the disc is kept away from the white half so small mip levels don't bleed between them.
 pub fn builtin_shapes() -> Arc<TextureData> {
     let key = PathBuf::from(BUILTIN_SHAPES_KEY);
     let mut cache = CACHE.lock().unwrap();
@@ -130,7 +135,7 @@ pub fn builtin_shapes() -> Arc<TextureData> {
     }
     const W: u32 = 1024;
     const H: u32 = 512;
-    let (cx, cy, radius) = (768.0f32, 256.0f32, 254.0f32);
+    let (cx, cy, radius) = (768.0f32, 256.0f32, 200.0f32);
     let mut pixels = vec![0u8; (W * H * 4) as usize];
     for y in 0..H {
         for x in 0..W {
@@ -150,6 +155,7 @@ pub fn builtin_shapes() -> Arc<TextureData> {
         width: W,
         height: H,
         pixels: pixels.into(),
+        mip_levels: 6,
     });
     cache.insert(key, data.clone());
     data

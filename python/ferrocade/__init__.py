@@ -4,7 +4,9 @@ from . import color
 from ._ferrocade import (
     LINEAR,
     NEAREST,
+    CircleSprite,
     Filter,
+    RectangleSprite,
     Sprite,
     SpriteList,
     Texture,
@@ -15,7 +17,9 @@ from ._ferrocade import (
 __all__ = [
     "LINEAR",
     "NEAREST",
+    "CircleSprite",
     "Filter",
+    "RectangleSprite",
     "Sprite",
     "SpriteList",
     "Texture",

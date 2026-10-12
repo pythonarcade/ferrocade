@@ -4,6 +4,7 @@
 
 use std::path::PathBuf;
 
+use ferrocade::color;
 use ferrocade::store::{self, SpriteId};
 use pyo3::exceptions::{PyRuntimeError, PyTypeError};
 use pyo3::prelude::*;
@@ -154,21 +155,41 @@ impl PySprite {
 
     #[setter]
     fn set_texture(&self, value: PyRef<'_, PyTexture>) -> PyResult<()> {
-        store::global()
-            .set_texture(self.id()?, value.texture_ref())
-            .py()
+        let id = self.id()?;
+        let mut store = store::global();
+        if store.sprite(id).py()?.is_shape() {
+            return Err(PyTypeError::new_err(
+                "shape sprites use a built-in texture; it can't be replaced",
+            ));
+        }
+        store.set_texture(id, value.texture_ref()).py()
     }
 
-    /// Drawn width in pixels: texture width × |scale|.
+    /// Tint as (r, g, b, a), 0-255. White (the default) draws the texture unchanged.
+    #[getter]
+    fn color(&self) -> PyResult<(u8, u8, u8, u8)> {
+        self.read(|s| {
+            let [r, g, b, a] = s.color;
+            (r, g, b, a)
+        })
+    }
+
+    #[setter]
+    fn set_color(&self, value: Vec<i64>) -> PyResult<()> {
+        let rgba = color::parse_rgba(&value).py()?;
+        store::global().set_color(self.id()?, rgba).py()
+    }
+
+    /// Drawn width in pixels: base size (or texture width) × |scale|.
     #[getter]
     fn width(&self) -> PyResult<f64> {
-        self.read(|s| s.texture.data.width as f64 * s.scale.abs())
+        self.read(|s| s.drawn_size().0)
     }
 
-    /// Drawn height in pixels: texture height × |scale|.
+    /// Drawn height in pixels: base size (or texture height) × |scale|.
     #[getter]
     fn height(&self) -> PyResult<f64> {
-        self.read(|s| s.texture.data.height as f64 * s.scale.abs())
+        self.read(|s| s.drawn_size().1)
     }
 }
 

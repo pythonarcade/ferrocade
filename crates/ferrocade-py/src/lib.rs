@@ -2,6 +2,7 @@
 
 mod errors;
 mod py_filter;
+mod py_shapes;
 mod py_sprite;
 mod py_sprite_list;
 mod py_texture;
@@ -19,6 +20,8 @@ fn _ferrocade(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<py_texture::PyTexture>()?;
     m.add_class::<py_sprite::PySprite>()?;
     m.add_class::<py_sprite_list::PySpriteList>()?;
+    m.add_class::<py_shapes::PyRectangleSprite>()?;
+    m.add_class::<py_shapes::PyCircleSprite>()?;
     m.add_function(wrap_pyfunction!(_debug_texture_disk_reads, m)?)?;
     Ok(())
 }

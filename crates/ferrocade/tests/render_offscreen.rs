@@ -273,3 +273,184 @@ fn linear_override_smooths_and_nearest_does_not() {
         "linear override should give a gray ramp"
     );
 }
+
+// --- Phase 1c: shapes and tint ---
+
+const RED: [u8; 4] = [255, 0, 0, 255];
+const BLUE: [u8; 4] = [0, 0, 255, 255];
+
+fn draw(
+    renderer: &mut Renderer,
+    store: &mut SpriteStore,
+    list: ferrocade::store::ListId,
+) -> Vec<u8> {
+    render(renderer, store, &[clear(), FrameCommand::DrawList(list)])
+}
+
+#[test]
+fn rectangle_has_exact_size_and_color() {
+    let Some(mut renderer) = renderer() else {
+        return;
+    };
+    let mut store = SpriteStore::new();
+    let list = store.create_list();
+    let r = store
+        .create_rectangle(50.0, 20.0, RED, 100.0, 100.0)
+        .unwrap();
+    store.append(list, r).unwrap();
+    let pixels = draw(&mut renderer, &mut store, list);
+    let (x0, y0, x1, y1) = bounding_box(&pixels).unwrap();
+    assert_eq!((x1 - x0 + 1, y1 - y0 + 1), (50, 20));
+    assert_eq!(((x0 + x1 + 1) / 2, (y0 + y1 + 1) / 2), (100, 100));
+    for (x, y) in [(76, 91), (100, 100), (124, 109)] {
+        assert_eq!(pixel(&pixels, x, y), [255, 0, 0], "at {x},{y}");
+    }
+}
+
+#[test]
+fn circle_is_round_with_exact_center_color() {
+    let Some(mut renderer) = renderer() else {
+        return;
+    };
+    let mut store = SpriteStore::new();
+    let list = store.create_list();
+    let c = store.create_circle(15.0, BLUE, 200.0, 100.0, None).unwrap();
+    store.append(list, c).unwrap();
+    let pixels = draw(&mut renderer, &mut store, list);
+    let (x0, y0, x1, y1) = bounding_box(&pixels).unwrap();
+    let (w, h) = (x1 - x0 + 1, y1 - y0 + 1);
+    assert!(w.abs_diff(30) <= 1 && h.abs_diff(30) <= 1, "size {w}x{h}");
+    assert_eq!(pixel(&pixels, 200, 100), [0, 0, 255]);
+    // Round, not square: the bounding box corners show the background.
+    for (x, y) in [(x0, y0), (x1, y0), (x0, y1), (x1, y1)] {
+        assert_eq!(pixel(&pixels, x, y), BACKGROUND, "corner {x},{y}");
+    }
+}
+
+#[test]
+fn semi_transparent_shape_blends() {
+    let Some(mut renderer) = renderer() else {
+        return;
+    };
+    let mut store = SpriteStore::new();
+    let list = store.create_list();
+    let under = store
+        .create_rectangle(40.0, 40.0, [255, 255, 255, 255], 300.0, 300.0)
+        .unwrap();
+    let over = store
+        .create_rectangle(40.0, 40.0, [0, 0, 0, 128], 300.0, 300.0)
+        .unwrap();
+    store.append(list, under).unwrap();
+    store.append(list, over).unwrap();
+    let p = pixel(&draw(&mut renderer, &mut store, list), 300, 300);
+    // Black at 50% over white, blended in linear space then sRGB-encoded: about 188.
+    assert!(p.iter().all(|&c| (170..=200).contains(&c)), "{p:?}");
+}
+
+#[test]
+fn thousand_mixed_shapes_are_one_draw_call() {
+    let Some(mut renderer) = renderer() else {
+        return;
+    };
+    let mut store = SpriteStore::new();
+    let list = store.create_list();
+    for i in 0..1000u32 {
+        let (x, y) = ((i % 40) as f64 * 20.0 + 10.0, (i / 40) as f64 * 20.0 + 10.0);
+        let color = [
+            (i * 7 % 256) as u8,
+            (i * 13 % 256) as u8,
+            (i * 29 % 256) as u8,
+            255,
+        ];
+        let size = 4.0 + (i % 10) as f64;
+        let id = if i % 2 == 0 {
+            store
+                .create_rectangle(size, size * 1.5, color, x, y)
+                .unwrap()
+        } else {
+            store.create_circle(size / 2.0, color, x, y, None).unwrap()
+        };
+        store.append(list, id).unwrap();
+    }
+    draw(&mut renderer, &mut store, list);
+    let stats = renderer.last_frame_stats();
+    assert_eq!(stats.draw_calls, 1, "{stats:?}");
+    assert_eq!(stats.instances, 1000);
+}
+
+#[test]
+fn circle_filter_override_smooths_edges() {
+    let Some(mut renderer) = renderer() else {
+        return;
+    };
+    // Count partially covered (anti-aliased) pixels around the whole circle outline.
+    // One store for every render: renderer caches are keyed by list ID, and a fresh store
+    // would reuse the first ID (the engine itself only ever has one global store).
+    let mut store = SpriteStore::new();
+    let mut soft_pixels = |radius: f64, filter: Option<Filter>| {
+        let list = store.create_list();
+        let c = store
+            .create_circle(radius, [255, 255, 255, 255], 400.25, 300.25, filter)
+            .unwrap();
+        store.append(list, c).unwrap();
+        let pixels = draw(&mut renderer, &mut store, list);
+        store.destroy_list(list);
+        (0..H)
+            .flat_map(|y| (0..W).map(move |x| (x, y)))
+            .filter(|&(x, y)| (40..250).contains(&pixel(&pixels, x, y)[0]))
+            .count()
+    };
+    for radius in [20.0, 100.0, 280.0] {
+        let (nearest, linear) = (
+            soft_pixels(radius, None),
+            soft_pixels(radius, Some(Filter::Linear)),
+        );
+        assert!(
+            linear > nearest,
+            "radius {radius}: linear {linear} soft pixels vs nearest {nearest}"
+        );
+    }
+}
+
+#[test]
+fn tint_colors_image_and_white_restores_it() {
+    let Some(mut renderer) = renderer() else {
+        return;
+    };
+    let mut store = SpriteStore::new();
+    let list = store.create_list();
+    let ship_id = store.create_sprite(ship(), 400.0, 300.0, 1.0).unwrap();
+    store.append(list, ship_id).unwrap();
+    let original = draw(&mut renderer, &mut store, list);
+
+    store.set_color(ship_id, [255, 0, 0, 255]).unwrap();
+    let red = draw(&mut renderer, &mut store, list);
+    let (mut opaque, mut checked) = (0, 0);
+    for y in 262..337 {
+        for x in 350..449 {
+            let (o, r) = (pixel(&original, x, y), pixel(&red, x, y));
+            if o == BACKGROUND {
+                assert_eq!(r, BACKGROUND, "transparent pixel changed at {x},{y}");
+            } else {
+                checked += 1;
+                if r[1] == 0 && r[2] == 0 && r[0] <= o[0] {
+                    opaque += 1;
+                }
+            }
+        }
+    }
+    // Edge pixels blend with the background, so require nearly all, not all.
+    assert!(
+        opaque * 100 >= checked * 90,
+        "{opaque}/{checked} pixels pure red"
+    );
+
+    store.set_color(ship_id, [255, 255, 255, 128]).unwrap();
+    let faded = draw(&mut renderer, &mut store, list);
+    let center = pixel(&faded, 400, 300);
+    let full = pixel(&original, 400, 300);
+    assert_ne!(center, full, "alpha 128 had no effect");
+
+    store.set_color(ship_id, [255, 255, 255, 255]).unwrap();
+    assert_eq!(draw(&mut renderer, &mut store, list), original);
+}

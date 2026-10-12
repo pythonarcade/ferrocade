@@ -96,12 +96,43 @@ class Sprite:
     angle: float
     """Rotation in degrees (stored; rotation is not drawn yet)."""
     texture: Texture
+    """Shape sprites use a built-in texture; assigning one raises TypeError."""
+    color: tuple[int, int, int, int]
+    """Tint (r, g, b, a), 0-255; accepts 3- or 4-tuples. White draws the texture unchanged."""
     @property
     def width(self) -> float:
-        """Drawn width in pixels: texture width × |scale|."""
+        """Drawn width in pixels: base size (or texture width) × |scale|."""
     @property
     def height(self) -> float:
-        """Drawn height in pixels: texture height × |scale|."""
+        """Drawn height in pixels: base size (or texture height) × |scale|."""
+
+class RectangleSprite(Sprite):
+    """A solid-color rectangle; no image needed."""
+
+    def __init__(
+        self,
+        width: float,
+        height: float,
+        color: Color,
+        center_x: float = 0.0,
+        center_y: float = 0.0,
+    ) -> None: ...
+
+class CircleSprite(Sprite):
+    """A solid-color circle; no image needed. Its edge follows the window filter unless overridden."""
+
+    def __init__(
+        self,
+        radius: float,
+        color: Color,
+        center_x: float = 0.0,
+        center_y: float = 0.0,
+        *,
+        filter: Filter | None = None,
+    ) -> None: ...
+    @property
+    def radius(self) -> float:
+        """Drawn radius in pixels: radius × |scale|."""
 
 @final
 class SpriteList:

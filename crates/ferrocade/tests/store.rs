@@ -138,3 +138,57 @@ fn set_texture_updates_slot_textures() {
     assert_eq!(state.slot_textures()[0], smooth);
     assert!(state.structure_version() > version);
 }
+
+#[test]
+fn shapes_validate_size_and_scale_with_base_size() {
+    let mut store = SpriteStore::new();
+    for (w, h) in [
+        (0.0, 10.0),
+        (10.0, -1.0),
+        (f64::NAN, 5.0),
+        (5.0, f64::INFINITY),
+    ] {
+        assert!(matches!(
+            store.create_rectangle(w, h, [1, 2, 3, 255], 0.0, 0.0),
+            Err(Error::InvalidArgument(_))
+        ));
+    }
+    assert!(
+        store
+            .create_circle(0.0, [1, 2, 3, 255], 0.0, 0.0, None)
+            .is_err()
+    );
+
+    let r = store
+        .create_rectangle(50.0, 20.0, [1, 2, 3, 255], 0.0, 0.0)
+        .unwrap();
+    let list = store.create_list();
+    store.append(list, r).unwrap();
+    assert_eq!(store.list(list).unwrap().instances()[0].size, [50.0, 20.0]);
+    store.set_scale(r, 2.0).unwrap();
+    assert_eq!(store.list(list).unwrap().instances()[0].size, [100.0, 40.0]);
+    assert!(store.sprite(r).unwrap().is_shape());
+}
+
+#[test]
+fn set_color_updates_every_list_and_marks_dirty() {
+    let mut store = SpriteStore::new();
+    let s = store.create_sprite(ship(), 0.0, 0.0, 1.0).unwrap();
+    let (a, b) = (store.create_list(), store.create_list());
+    store.append(a, s).unwrap();
+    store.append(b, s).unwrap();
+    assert_eq!(
+        store.list(a).unwrap().instances()[0].color,
+        [255, 255, 255, 255]
+    );
+    store.list_mut(a).unwrap().take_dirty();
+    store.list_mut(b).unwrap().take_dirty();
+    store.set_color(s, [10, 20, 30, 40]).unwrap();
+    for list in [a, b] {
+        assert_eq!(
+            store.list(list).unwrap().instances()[0].color,
+            [10, 20, 30, 40]
+        );
+        assert_eq!(store.list(list).unwrap().dirty(), Some(0..1));
+    }
+}

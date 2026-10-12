@@ -35,7 +35,7 @@ impl GpuTextures {
                 },
             ],
         });
-        let sampler = |filter: wgpu::FilterMode, label| {
+        let sampler = |filter: wgpu::FilterMode, mipmap: wgpu::MipmapFilterMode, label| {
             device.create_sampler(&wgpu::SamplerDescriptor {
                 label: Some(label),
                 address_mode_u: wgpu::AddressMode::ClampToEdge,
@@ -43,12 +43,21 @@ impl GpuTextures {
                 address_mode_w: wgpu::AddressMode::ClampToEdge,
                 mag_filter: filter,
                 min_filter: filter,
+                mipmap_filter: mipmap,
                 ..Default::default()
             })
         };
         Self {
-            nearest: sampler(wgpu::FilterMode::Nearest, "ferrocade nearest sampler"),
-            linear: sampler(wgpu::FilterMode::Linear, "ferrocade linear sampler"),
+            nearest: sampler(
+                wgpu::FilterMode::Nearest,
+                wgpu::MipmapFilterMode::Nearest,
+                "ferrocade nearest sampler",
+            ),
+            linear: sampler(
+                wgpu::FilterMode::Linear,
+                wgpu::MipmapFilterMode::Linear,
+                "ferrocade linear sampler",
+            ),
             layout,
             views: HashMap::new(),
             bind_groups: HashMap::new(),
@@ -110,22 +119,56 @@ fn upload(device: &wgpu::Device, queue: &wgpu::Queue, texture: &TextureData) -> 
     let gpu = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("ferrocade texture"),
         size,
-        mip_level_count: 1,
+        mip_level_count: texture.mip_levels,
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
         format: wgpu::TextureFormat::Rgba8UnormSrgb,
         usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
         view_formats: &[],
     });
-    queue.write_texture(
-        gpu.as_image_copy(),
-        &texture.pixels,
-        wgpu::TexelCopyBufferLayout {
-            offset: 0,
-            bytes_per_row: Some(4 * texture.width),
-            rows_per_image: Some(texture.height),
-        },
-        size,
-    );
+    let (mut pixels, mut w, mut h) = (texture.pixels.to_vec(), texture.width, texture.height);
+    for level in 0..texture.mip_levels {
+        if level > 0 {
+            (pixels, w, h) = downsample(&pixels, w, h);
+        }
+        queue.write_texture(
+            wgpu::TexelCopyTextureInfo {
+                texture: &gpu,
+                mip_level: level,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            &pixels,
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(4 * w),
+                rows_per_image: Some(h),
+            },
+            wgpu::Extent3d {
+                width: w,
+                height: h,
+                depth_or_array_layers: 1,
+            },
+        );
+    }
     gpu.create_view(&wgpu::TextureViewDescriptor::default())
+}
+
+/// Halve an RGBA8 image with a 2×2 box filter (used to build mip levels).
+fn downsample(pixels: &[u8], w: u32, h: u32) -> (Vec<u8>, u32, u32) {
+    let (nw, nh) = ((w / 2).max(1), (h / 2).max(1));
+    let mut out = vec![0u8; (nw * nh * 4) as usize];
+    for y in 0..nh {
+        for x in 0..nw {
+            for c in 0..4 {
+                let mut sum = 0u32;
+                for (dx, dy) in [(0, 0), (1, 0), (0, 1), (1, 1)] {
+                    let (sx, sy) = ((x * 2 + dx).min(w - 1), (y * 2 + dy).min(h - 1));
+                    sum += pixels[((sy * w + sx) * 4 + c) as usize] as u32;
+                }
+                out[((y * nw + x) * 4 + c) as usize] = ((sum + 2) / 4) as u8;
+            }
+        }
+    }
+    (out, nw, nh)
 }

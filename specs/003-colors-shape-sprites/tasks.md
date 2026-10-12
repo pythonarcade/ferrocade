@@ -102,17 +102,17 @@ US2 and US3 use it.
 
 ### Tests for User Story 2
 
-- [ ] T014 [P] [US2] Extend `crates/ferrocade/tests/render_offscreen.rs` (window filter `Nearest` unless stated), covering:
+- [X] T014 [P] [US2] Extend `crates/ferrocade/tests/render_offscreen.rs` (window filter `Nearest` unless stated), covering:
   - a 50×20 `RED` rectangle at (100,100): its bounding box is 50×20 ±1 and centered within 1 px, and its interior pixels are exactly (255,0,0)
   - a radius-15 `BLUE` circle at (200,100): its bounding box is 30×30 ±1, its center pixel is (0,0,255), and the bounding-box corner pixels are the background (round, not square)
   - a semi-transparent rectangle (alpha 128) over a white rectangle blends to roughly the midpoint (within ±3)
   - **1,000 interleaved rectangles and circles** with mixed sizes and colors in one list: `last_frame_stats().draw_calls == 1`
   - a circle with a `Linear` override gives at least 2 distinct partial-alpha edge values, while `Nearest` gives a crisper edge (fewer distinct edge values)
-- [ ] T015 [P] [US2] Extend `crates/ferrocade/tests/store.rs`, covering:
+- [X] T015 [P] [US2] Extend `crates/ferrocade/tests/store.rs`, covering:
   - `create_shape` with width, height, or radius ≤ 0 or non-finite gives `InvalidArgument`
   - the instance size equals `base_size × |scale|`, and `set_scale(2.0)` doubles it
   - `set_color` rewrites the instance color in every list and marks those slots dirty
-- [ ] T016 [P] [US2] Write `tests/test_shapes.py`, covering:
+- [X] T016 [P] [US2] Write `tests/test_shapes.py`, covering:
   - `fc.RectangleSprite(50, 20, fc.color.RED, 100, 100)`: `width == 50.0`, `height == 20.0`, `color == (255, 0, 0, 255)`, `isinstance(..., fc.Sprite)`
   - `fc.CircleSprite(15, fc.color.BLUE)`: `width == height == 30.0`, `radius == 15.0`
   - `scale = 2` doubles width and radius
@@ -128,13 +128,13 @@ US2 and US3 use it.
 - [X] T017 [US2] Add the built-in shape atlas to `crates/ferrocade/src/texture.rs`.
   - `pub fn builtin_shapes() -> Arc<TextureData>` generates, once and cached under the key `PathBuf::from("<builtin:shapes>")`, a 1024×512 RGBA image. The left 512×512 is opaque white. The right 512×512 is a white disc centered at (768,256) with radius 254, using an anti-aliased alpha edge (alpha = clamp(radius + 0.5 − distance, 0, 1) × 255) on a transparent background.
   - Add `pub const RECT_UV: [f32;4] = [0.125, 0.25, 0.375, 0.75]` and `pub const CIRCLE_UV: [f32;4] = [0.5, 0.0, 1.0, 1.0]`.
-- [ ] T018 [US2] Add `pub fn create_rectangle(&mut self, w, h, color, cx, cy)` and `pub fn create_circle(&mut self, radius, color, cx, cy, filter: Option<Filter>)` to `crates/ferrocade/src/store.rs`. They call `create_shape` with `builtin_shapes()`, the right UV, `base_size` `(w,h)` or `(2r,2r)`, and the `TextureRef.filter` override (circles only). Validate the radius as for width and height.
-- [ ] T019 [US2] Expose `pub(crate)` helpers in `crates/ferrocade-py/src/py_sprite.rs` so subclasses can set the id: `PySprite::empty()` and `fn set_id(&mut self, id)`. Reject `set_texture` on shape sprites with `TypeError("shape sprites use a built-in texture")`, detected by `base_size.is_some()` in the store.
-- [ ] T020 [US2] Create `crates/ferrocade-py/src/py_shapes.rs` (the T001 pattern, or its fallback).
+- [X] T018 [US2] Add `pub fn create_rectangle(&mut self, w, h, color, cx, cy)` and `pub fn create_circle(&mut self, radius, color, cx, cy, filter: Option<Filter>)` to `crates/ferrocade/src/store.rs`. They call `create_shape` with `builtin_shapes()`, the right UV, `base_size` `(w,h)` or `(2r,2r)`, and the `TextureRef.filter` override (circles only). Validate the radius as for width and height.
+- [X] T019 [US2] Expose `pub(crate)` helpers in `crates/ferrocade-py/src/py_sprite.rs` so subclasses can set the id: `PySprite::empty()` and `fn set_id(&mut self, id)`. Reject `set_texture` on shape sprites with `TypeError("shape sprites use a built-in texture")`, detected by `base_size.is_some()` in the store.
+- [X] T020 [US2] Create `crates/ferrocade-py/src/py_shapes.rs` (the T001 pattern, or its fallback).
   - `#[pyclass(extends = PySprite, subclass, name = "RectangleSprite")]` with `__init__(self_, width, height, color: Vec<i64>, center_x=0.0, center_y=0.0)`. It parses the color with `color::parse_rgba`, calls `store::create_rectangle`, and sets the base id.
   - `#[pyclass(extends = PySprite, subclass, name = "CircleSprite")]` with `__init__(self_, radius, color, center_x=0.0, center_y=0.0, *, filter: Option<PyFilter>=None)` and a read-only `radius` getter (`base radius × |scale|`).
   - Register both in `crates/ferrocade-py/src/lib.rs`.
-- [ ] T021 [US2] Export `RectangleSprite` and `CircleSprite` in `python/ferrocade/__init__.py`. Add their stubs (signatures exactly per contracts/python-api.md) to `python/ferrocade/_ferrocade.pyi`.
+- [X] T021 [US2] Export `RectangleSprite` and `CircleSprite` in `python/ferrocade/__init__.py`. Add their stubs (signatures exactly per contracts/python-api.md) to `python/ferrocade/_ferrocade.pyi`.
 - [ ] T022 [US2] Create `examples/01c_shapes.py`, following the contract sketch (a rectangle, a `NEAREST` circle, a `LINEAR`-override circle, all in named colors; the tinted ship is added in T030).
   - With `--many`: 1,000 random shapes (mixed rectangles and circles, sizes 4–24, random CSS colors).
   - Print the average frame time to the console every 2 s (`time.perf_counter` in `on_draw`).
@@ -153,17 +153,17 @@ US2 and US3 use it.
 
 **Independent Test**: tint the ship red and to half alpha, and confirm the change in a pixel test. Reset it to white, and confirm it's identical to the original.
 
-- [ ] T027 [P] [US3] Extend `crates/ferrocade/tests/render_offscreen.rs`, covering:
+- [X] T027 [P] [US3] Extend `crates/ferrocade/tests/render_offscreen.rs`, covering:
   - the ship with `set_color([255,0,0,255])`: every opaque ship pixel has G = B = 0 and R ≤ its original R, and transparent pixels are still the background
   - `set_color([255,255,255,128])` gives ship pixels about halfway between the original and the background (within ±3)
   - resetting to white makes the pixels identical to the untinted render
-- [ ] T028 [P] [US3] Add to `tests/test_sprite.py`:
+- [X] T028 [P] [US3] Add to `tests/test_sprite.py`:
   - the default `color == (255, 255, 255, 255)`
   - setting a 3-tuple gives alpha 255
   - a 4-tuple round-trips
   - `ValueError` for a 2-tuple, `(256, 0, 0)`, or `(-1, 0, 0)`
   - a shape's `color` can be changed after creation
-- [ ] T029 [US3] Add the `color` getter (returns a 4-tuple) and setter (accepts a 3- or 4-sequence, via `color::parse_rgba`, then `store::set_color`) to `crates/ferrocade-py/src/py_sprite.rs`. Add it to the `Sprite` stub in `python/ferrocade/_ferrocade.pyi`.
+- [X] T029 [US3] Add the `color` getter (returns a 4-tuple) and setter (accepts a 3- or 4-sequence, via `color::parse_rgba`, then `store::set_color`) to `crates/ferrocade-py/src/py_sprite.rs`. Add it to the `Sprite` stub in `python/ferrocade/_ferrocade.pyi`.
 - [ ] T030 [US3] Add the web side: `set_color(sprite, r, g, b, a)` and `get_color(sprite) -> Vec<u8>` in `crates/ferrocade-web/src/lib.rs`, and the `color` property in `web/python/ferrocade/__init__.py`. Update `examples/01c_shapes.py` to add the ship tinted with `fc.color.LIGHT_PINK` (FR-015).
 - [ ] T031 [US3] Run T027 and T028, rerun `python examples/01c_shapes.py`, and run the browser check on `?example=01c_shapes`. The ship should be tinted on both.
 

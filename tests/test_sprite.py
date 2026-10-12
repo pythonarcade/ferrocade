@@ -92,3 +92,29 @@ def test_subclass_without_super_init_gives_clear_error():
 
     with pytest.raises(RuntimeError, match="super"):
         Broken().center_x
+
+
+def test_color_defaults_to_white():
+    assert fc.Sprite(SHIP).color == (255, 255, 255, 255)
+
+
+def test_color_set_and_round_trip():
+    s = fc.Sprite(SHIP)
+    s.color = (255, 0, 0)
+    assert s.color == (255, 0, 0, 255)
+    s.color = (10, 20, 30, 40)
+    assert s.color == (10, 20, 30, 40)
+    s.color = fc.color.LIGHT_PINK
+    assert s.color == (*fc.color.LIGHT_PINK, 255)
+
+
+@pytest.mark.parametrize("bad", [(1, 2), (256, 0, 0), (-1, 0, 0)])
+def test_color_validation(bad):
+    with pytest.raises(ValueError):
+        fc.Sprite(SHIP).color = bad
+
+
+def test_shape_color_can_change():
+    r = fc.RectangleSprite(10, 10, fc.color.RED)
+    r.color = fc.color.GREEN
+    assert r.color == (0, 128, 0, 255)
