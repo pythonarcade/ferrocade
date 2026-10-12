@@ -386,6 +386,7 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
   - it works on desktop and in the browser
 
 ### Phase 2: Bouncing ship (movement)
+- **Status (2026-10-12): implemented** on desktop and web, with counter-clockwise rotation. See `docs/research/phase2-validation.md`: 601 updates in 10 s; 1,000 bouncing shapes at 60 FPS; the engine moves 1,000 sprites in 0.087 ms vs. 1.34 ms for Python edge checks.
 - **Goal:** the ship moves and bounces off the window edges.
 - **Proves:** fixed-timestep loop, `on_update(delta_time)`, per-second velocities, and dirty-buffer updates (§7, §8).
 - **Delivers:** `velocity_x`/`velocity_y`/`angular_velocity`, `SpriteList.update()` (motion applied in Rust), and the `update_rate` setting.
@@ -585,6 +586,7 @@ ferrocade/                 # repo root
 | 2026-10-12 | Built-in shape atlas is mipmapped (6 levels) and the disc is kept clear of the white half | Needed so `LINEAR` circles stay smooth when drawn small; found by Phase 1c tests |
 | 2026-10-12 | Angles and angular velocity stay in degrees (deg, deg/s); an angle-to-velocity helper goes in the backlog | Owner confirmed degrees over radians |
 | 2026-10-12 | Rotation: a positive angle is counter-clockwise (math convention) | Chosen for mathematical consistency with y-up; differs from Arcade 3.x |
+| 2026-10-12 | Measured: per-sprite Python work costs about 15× the engine's bulk update (1,000 sprites: 1.34 ms vs. 0.087 ms) | Evidence for the hybrid collision design (§11 Q6); `docs/research/phase2-validation.md` |
 | 2026-10-12 | Collision direction: Rust does movement and detection, Python manages collisions (game logic) | Owner direction; delivery mechanism Proposed (§11 Q6: built-in Rust responses plus batched enter/exit events plus queries) |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
 | 2026-10-12 | Collision detection implemented in Rust | Design open (§11) |

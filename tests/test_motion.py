@@ -105,16 +105,24 @@ def run_timed(seconds, update_rate=1 / 60, draw_delay=0.0):
             self.sprites = fc.SpriteList()
             self.sprites.append(self.sprite)
             self.updates = 0
+            self.start_x = None
+            self.counting_from = None
             self.deadline = None
 
         def on_update(self, delta_time):
+            # Warm up first: window startup can cause one catch-up batch of updates, which
+            # would otherwise be counted against a measuring window that hadn't really begun.
             now = time.perf_counter()
-            if self.deadline is None:
-                self.deadline = now + seconds
-            elif now >= self.deadline:
-                raise StopTest
-            self.updates += 1
             self.sprites.update(delta_time)
+            if self.counting_from is None:
+                self.counting_from = now + 0.5
+            elif self.deadline is None and now >= self.counting_from:
+                self.deadline = now + seconds
+                self.start_x = self.sprite.center_x
+            elif self.deadline is not None:
+                if now >= self.deadline:
+                    raise StopTest
+                self.updates += 1
 
         def on_draw(self):
             self.clear()
@@ -125,7 +133,7 @@ def run_timed(seconds, update_rate=1 / 60, draw_delay=0.0):
     window = Timed()
     with pytest.raises(StopTest):
         window.run()
-    return window.updates, window.sprite.center_x
+    return window.updates, window.sprite.center_x - window.start_x
 
 
 @pytest.mark.display

@@ -94,12 +94,12 @@ come from earlier phases.
 
 **Independent Test**: `python examples/02_bouncing_ship.py` shows the ship bouncing off all four edges, never leaving the window.
 
-- [ ] T012 [US2] Create `examples/02_bouncing_ship.py` from the contract sketch.
+- [X] T012 [US2] Create `examples/02_bouncing_ship.py` from the contract sketch.
   - **Default mode:** the ship centered, velocity (220, 170), `angular_velocity = 45`. `on_update` calls `self.sprites.update(delta_time)`, then for each axis, if the sprite's unrotated half-size bounds are outside the window, it flips that velocity component and clamps the position back inside.
   - **`--many`:** 1,000 random `RectangleSprite`/`CircleSprite` shapes (sizes 4–24, random CSS colors, random velocities ±50–250 px/s), bounced by the same per-sprite Python check in a loop, with the frame time printed every 2 s (startup excluded, like `01c_shapes.py`).
   - **`--count`:** count `on_update` calls and print the count and rate after 10 s of wall-clock time, then exit by raising `SystemExit` from `on_update`.
-- [ ] T013 [US2] Run the default mode for about 60 s, using a check variant that tracks bounds. Add an internal `--check` flag that asserts the ship stays inside the window every update and prints `OK` after 60 s. Then run `--many` and record the frame time (B3, B5).
-- [ ] T014 [US2] Browser motion check: add a `--motion` flag to `tools/web-check/check.mjs`. It takes a second screenshot 1 s after the first, computes the bounding box of non-background pixels in each, and asserts that the box moved and stays inside the canvas. Run it on `http://localhost:8000/web/?example=02_bouncing_ship` with `tools\build_web.ps1` (B6).
+- [X] T013 [US2] Run the default mode for about 60 s, using a check variant that tracks bounds. Add an internal `--check` flag that asserts the ship stays inside the window every update and prints `OK` after 60 s. Then run `--many` and record the frame time (B3, B5).
+- [X] T014 [US2] Browser motion check: add a `--motion` flag to `tools/web-check/check.mjs`. It takes a second screenshot 1 s after the first, computes the bounding box of non-background pixels in each, and asserts that the box moved and stays inside the canvas. Run it on `http://localhost:8000/web/?example=02_bouncing_ship` with `tools\build_web.ps1` (B6).
 
 **Checkpoint**: US2 is complete. The milestone demo works on desktop and web.
 
@@ -115,7 +115,7 @@ come from earlier phases.
   - a window with the default update rate, run for 3.0 s of wall-clock time (stop via a `StopTest` raised from `on_update` once `time.perf_counter()` passes the deadline), counting `on_update` calls: expect 180 ±3%, and a sprite at 100 px/s, updated each tick, moved 300 px ±3%
   - the same with `on_draw` sleeping 0.05 s (about 20 FPS): the same expectations
   - `update_rate=1/30`: about 90 calls in 3 s, with the same distance
-- [ ] T016 [US3] Run T015 and `python examples/02_bouncing_ship.py --count`: expect 600 ±2% after 10 s (B4). Record the results.
+- [X] T016 [US3] Run T015 and `python examples/02_bouncing_ship.py --count`: expect 600 ±2% after 10 s (B4). Record the results.
 
 **Checkpoint**: US3 is complete. Frame-rate independence is verified.
 
@@ -133,7 +133,7 @@ come from earlier phases.
   - `angle = 45` on a 40×40 square gives a bounding box of about 57×57 (±2)
   - the angle-0 renders are unchanged (the existing tests cover this)
 - [X] T018 [US4] Update the vertex shader in `crates/ferrocade/src/render/sprite.wgsl`: `let a = radians(in.angle); let offset = (corner - vec2(0.5)) * in.size; let rotated = vec2(offset.x*cos(a) - offset.y*sin(a), offset.x*sin(a) + offset.y*cos(a)); world = in.center + rotated`. Remove the "not applied yet" comments in `crates/ferrocade/src/instance.rs` and the shader.
-- [ ] T019 [US4] Run T017 plus the full `cargo test --workspace`. Confirm in the browser (the default `?diagnostics=1` check is still centered, and the spinning ship rotates in `?example=02_bouncing_ship`).
+- [X] T019 [US4] Run T017 plus the full `cargo test --workspace`. Confirm in the browser (the default `?diagnostics=1` check is still centered, and the spinning ship rotates in `?example=02_bouncing_ship`).
 
 **Checkpoint**: all four stories are complete.
 
@@ -141,15 +141,15 @@ come from earlier phases.
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T020 Full regression and lint:
+- [X] T020 Full regression and lint:
   - `cargo fmt --all`
   - `cargo clippy --workspace --all-targets -- -D warnings`
   - `cargo clippy -p ferrocade --no-default-features --all-targets -- -D warnings`
   - `cargo clippy -p ferrocade-web --target wasm32-unknown-unknown -- -D warnings`
   - `cargo test --workspace`, `maturin develop`, `pytest`
   - the Phase 1 and 1c examples (unchanged), and the web checks for `01_centered_ship` and `01c_shapes`
-- [ ] T021 [P] Check `python/ferrocade/_ferrocade.pyi` against the runtime (no missing or extra names) and against contracts/python-api.md.
-- [ ] T022 Record B1–B7 (with frame times, update counts, and the cost of the Python edge checks over 1,000 sprites in `--many`) in `docs/research/phase2-validation.md`, linked from `docs/research/README.md`. Mark Phase 2 implemented in `docs/spec/ENGINE_SPEC.md` §10, and add decision log entries for any deviations.
+- [X] T021 [P] Check `python/ferrocade/_ferrocade.pyi` against the runtime (no missing or extra names) and against contracts/python-api.md.
+- [X] T022 Record B1–B7 (with frame times, update counts, and the cost of the Python edge checks over 1,000 sprites in `--many`) in `docs/research/phase2-validation.md`, linked from `docs/research/README.md`. Mark Phase 2 implemented in `docs/spec/ENGINE_SPEC.md` §10, and add decision log entries for any deviations.
 
 ---
 

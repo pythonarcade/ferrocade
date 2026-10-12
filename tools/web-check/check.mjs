@@ -62,12 +62,26 @@ const exampleUnchanged = await page.evaluate(async () => {
 });
 const errorText = await page.$eval("#error", (e) => e.textContent);
 const drawCalls = await page.evaluate(() => window.ferrocadeEngine?.draw_calls?.() ?? null);
+// --motion: read the first sprite's position twice, 1 s apart, to prove the game loop moves it.
+let motion = null;
+if (args.includes("--motion")) {
+  const read = () => page.evaluate(() => Array.from(window.ferrocadeEngine.get_sprite(0)).slice(0, 2));
+  const before = await read();
+  await new Promise((r) => setTimeout(r, 1000));
+  const after = await read();
+  const canvas = await page.evaluate(() => [parseFloat(document.getElementById("game").style.width),
+                                            parseFloat(document.getElementById("game").style.height)]);
+  const moved = Math.hypot(after[0] - before[0], after[1] - before[1]);
+  const inside = after[0] >= 0 && after[0] <= canvas[0] && after[1] >= 0 && after[1] <= canvas[1];
+  motion = { before, after, moved: Math.round(moved), inside };
+  if (!(moved > 50 && inside)) outcome = "motion-failed";
+}
 
 const pick = (prefix) => console_.find((l) => l.includes(prefix)) ?? null;
 const summary = {
   url, browser: browserName, outcome,
   backend: pick("backend="), timeToShip: pick("ship-visible"), centering: pick("centering"),
-  exampleUnchanged, drawCalls, bytes, errorText: errorText || null, screenshot: shot,
+  exampleUnchanged, drawCalls, motion, bytes, errorText: errorText || null, screenshot: shot,
   console: console_.slice(0, 40),
 };
 console.log(JSON.stringify(summary, null, 2));
