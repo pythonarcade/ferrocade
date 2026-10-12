@@ -124,20 +124,20 @@ description: "Task list for Phase 1b — Web Feasibility Spike"
 
 ### Engine (Rust, `crates/ferrocade-web/src/lib.rs`)
 
-- [ ] T023 [US2] Implement `Engine::create(canvas: HtmlCanvasElement, backend: String) -> Promise<Engine>` (`#[wasm_bindgen]` async).
+- [X] T023 [US2] Implement `Engine::create(canvas: HtmlCanvasElement, backend: String) -> Promise<Engine>` (`#[wasm_bindgen]` async).
   - Install `console_error_panic_hook`.
   - Create the `wgpu::Instance` with backends `BROWSER_WEBGPU | GL` for `"auto"` or `GL` for `"webgl2"`.
   - Create the surface via `wgpu::SurfaceTarget::Canvas(canvas)`, then `Renderer::with_surface` at the canvas size.
   - Store the renderer, the window filter (default `Nearest` until `configure`), the logical size, and `FixedTimestep`.
   - Add a `backend_name` getter that uses `Renderer::backend_name`.
   - Errors reject the promise with a readable message (for example "no WebGPU or WebGL2 adapter").
-- [ ] T024 [US2] Implement the frame API per contract §2.
+- [X] T024 [US2] Implement the frame API per contract §2.
   - `configure(width, height, filter: "nearest" | "linear", update_rate)`: resizes the canvas and the surface, and sets the timestep and filter.
   - `advance(elapsed) -> u32` via `FixedTimestep::advance`.
   - `begin_frame()` calls `frame::begin()`.
   - `clear(r, g, b, a)` uses `color::parse_rgba`, then `frame::push(Clear)`. Errors keep the desktop message ("color components must be 0-255…").
   - `end_frame()` calls `frame::end()`, then `renderer.render_frame(&cmds, &mut store::global(), logical_size, filter)`.
-- [ ] T025 [US2] Implement the texture, sprite, and list API per contract §2. Use `u32` handle tables (`Vec<Option<SpriteId>>`, `Vec<Option<ListId>>`, `Vec<TextureRef>`) so IDs stay JS-number safe.
+- [X] T025 [US2] Implement the texture, sprite, and list API per contract §2. Use `u32` handle tables (`Vec<Option<SpriteId>>`, `Vec<Option<ListId>>`, `Vec<TextureRef>`) so IDs stay JS-number safe.
   - **Textures:** `load_texture(path, bytes: Vec<u8>) -> u32` via `texture::load_from_bytes`, and `texture_size`.
   - **Sprites:** `create_sprite(texture, filter: "" | "nearest" | "linear", cx, cy, scale)`, `destroy_sprite`, `get_sprite -> Vec<f64>` (`[center_x, center_y, scale, angle]`), `set_center_x`, `set_center_y`, `set_position`, `set_scale`, `set_angle`.
   - **Lists:** `create_list`, `destroy_list`, `append`, `remove`, and `draw_list` (`frame::push(DrawList)`).
@@ -145,7 +145,7 @@ description: "Task list for Phase 1b — Web Feasibility Spike"
 
 ### Browser side
 
-- [ ] T026 [P] [US2] Write the shim `web/python/ferrocade/__init__.py`, implementing contract §1 on top of the engine JS module (registered as `ferrocade_engine`).
+- [X] T026 [P] [US2] Write the shim `web/python/ferrocade/__init__.py`, implementing contract §1 on top of the engine JS module (registered as `ferrocade_engine`).
   - **`Filter`:** an `enum.Enum` with `NEAREST`/`LINEAR`, plus the module aliases.
   - **`Window`:**
     - `__init__(self, width=800, height=600, title="Ferrocade", *, filter, update_rate=1/60)`, raising the same `ValueError`/`TypeError` as desktop
@@ -156,9 +156,9 @@ description: "Task list for Phase 1b — Web Feasibility Spike"
   - **`Sprite`:** `__init__(texture | path, center_x=0.0, center_y=0.0, scale=1.0)`, properties forwarding to the engine (no Python-side copies), `width`/`height` from the texture size × `abs(scale)`, `__del__` calling `destroy_sprite`. Subclassable.
   - **`SpriteList`:** `append`/`remove`/`draw`/`__len__`/`__contains__`/`__iter__`, keeping Python references in order.
   - Anything unsupported raises `NotImplementedError("... not available in the web spike")`. Mark the module docstring `SPIKE:`.
-- [ ] T027 [P] [US2] Copy `python/ferrocade/color.py` to `web/python/ferrocade/color.py` unchanged. Add a `# SPIKE: copied from python/ferrocade/color.py; share it once the web package is real` header.
-- [ ] T028 [P] [US2] Create `web/index.html`: a `<canvas id="game">`, a status line (`#status`), a hidden error panel (`#error`, `<pre>`), a module script `loader.js`, and minimal centered styling.
-- [ ] T029 [US2] Create `web/loader.js` (ES module) per contract §3.
+- [X] T027 [P] [US2] Copy `python/ferrocade/color.py` to `web/python/ferrocade/color.py` unchanged. Add a `# SPIKE: copied from python/ferrocade/color.py; share it once the web package is real` header.
+- [X] T028 [P] [US2] Create `web/index.html`: a `<canvas id="game">`, a status line (`#status`), a hidden error panel (`#error`, `<pre>`), a module script `loader.js`, and minimal centered styling.
+- [X] T029 [US2] Create `web/loader.js` (ES module) per contract §3.
   - `performance.mark("start")`. Status "Loading Python runtime…", then `loadPyodide()` from `https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pyodide.mjs`.
   - Status "Starting graphics…": import `./pkg/ferrocade_web.js`, `await init()`, `await Engine.create(canvas, new URLSearchParams(location.search).get("backend") ?? "auto")`, and log `backend=<engine.backend_name>`.
   - Status "Loading assets…": `// SPIKE: hard-coded asset list`. Fetch `../assets/images/ship.png` and write it to `pyodide.FS` at `assets/images/ship.png` (create the directories). Fetch `python/ferrocade/__init__.py` and `color.py` into `/home/pyodide/ferrocade/`.
@@ -166,18 +166,18 @@ description: "Task list for Phase 1b — Web Feasibility Spike"
   - Fetch `../examples/01_centered_ship.py` **unchanged** and run it with `pyodide.runPythonAsync`.
   - After the first `end_frame`: `performance.mark("ship-visible")` and log the ms since start (hook it via a one-shot wrapper around `engine.end_frame`).
   - Any rejected step shows the error panel with the step name and reason.
-- [ ] T030 [US2] Add the centering diagnostics to `web/loader.js` (and update contract §2: pixel readback lives in the loader, not in `Engine`). Immediately after the first rendered frame, *in the same task*, draw the game canvas into an offscreen 2D canvas, `getImageData`, compute the bounding box of non-background pixels (background `rgb(32,32,32)`), and log the size and the center offset from the canvas center. Enable it only with `?diagnostics=1`.
+- [X] T030 [US2] Add the centering diagnostics to `web/loader.js` (and update contract §2: pixel readback lives in the loader, not in `Engine`). Immediately after the first rendered frame, *in the same task*, draw the game canvas into an offscreen 2D canvas, `getImageData`, compute the bounding box of non-background pixels (background `rgb(32,32,32)`), and log the size and the center offset from the canvas center. Enable it only with `?diagnostics=1`.
 
 ### Validation (results go to the report in T018)
 
-- [ ] T031 [US2] Create the automated browser check `tools/web-check/` (`package.json` with `puppeteer-core`, plus `check.mjs`).
+- [X] T031 [US2] Create the automated browser check `tools/web-check/` (`package.json` with `puppeteer-core`, plus `check.mjs`).
   - It launches the installed Chrome or Edge (headless `new`, with `--enable-unsafe-webgpu` where needed) against `http://localhost:8000/web/?diagnostics=1[&backend=webgl2]`.
   - It captures the console (backend, ship-visible ms, centering), the network transfer sizes, and a screenshot to `tools/web-check/out/`, then exits non-zero on page errors.
   - Add `tools/web-check/out/` to `.gitignore`.
-- [ ] T032 [US2] **W2 + W4 (WebGPU):** build (T033 script or manual), serve, and run the check on `/web/?diagnostics=1`. The ship should be centered within 1 px at 99×75 and the backend should be WebGPU. Save the screenshot path and console log into `spike/web-results.md`. If headless WebGPU is unavailable, record that and rely on T035 plus the owner's check.
-- [ ] T033 [US2] Create `tools/build_web.ps1`: it runs `cargo build -p ferrocade-web --target wasm32-unknown-unknown --release` and then `wasm-bindgen --target web --out-dir web/pkg target/wasm32-unknown-unknown/release/ferrocade_web.wasm`, and prints the serve and open instructions. With `-Serve`, it also starts `python -m http.server 8000` from the repo root.
-- [ ] T034 [US2] **W3 (WebGL2):** run the check with `&backend=webgl2`. Expect the same centering result with a GL backend. Record it in `spike/web-results.md`.
-- [ ] T035 [US2] **W5–W8:**
+- [X] T032 [US2] **W2 + W4 (WebGPU):** build (T033 script or manual), serve, and run the check on `/web/?diagnostics=1`. The ship should be centered within 1 px at 99×75 and the backend should be WebGPU. Save the screenshot path and console log into `spike/web-results.md`. If headless WebGPU is unavailable, record that and rely on T035 plus the owner's check.
+- [X] T033 [US2] Create `tools/build_web.ps1`: it runs `cargo build -p ferrocade-web --target wasm32-unknown-unknown --release` and then `wasm-bindgen --target web --out-dir web/pkg target/wasm32-unknown-unknown/release/ferrocade_web.wasm`, and prints the serve and open instructions. With `-Serve`, it also starts `python -m http.server 8000` from the repo root.
+- [X] T034 [US2] **W3 (WebGL2):** run the check with `&backend=webgl2`. Expect the same centering result with a GL backend. Record it in `spike/web-results.md`.
+- [X] T035 [US2] **W5–W8:**
   - W5: confirm the loader runs the fetched `examples/01_centered_ship.py` byte-for-byte (diff lines = 0).
   - W6: cold and warm time-to-ship, as the median of 3 runs each, from the check script (cold = fresh browser profile).
   - W7: download bytes split into Pyodide, engine wasm+js, and assets.

@@ -28,6 +28,11 @@ for everything the Phase 1 example uses: `Window(width, height, title, *, filter
 
 ## 2. Engine JS API (`ferrocade-web`, wasm-bindgen)
 
+**As built**: the methods use wasm-bindgen's default **snake_case** names (`begin_frame`, `load_texture`,
+`set_center_x`, and so on). The loader exposes the engine to Python as the global `ferrocadeEngine`
+(`js.ferrocadeEngine`), because `registerJsModule` doesn't expose class-prototype methods as module
+attributes. The camelCase names below show the API's shape.
+
 All IDs are `u32` handles in engine-side tables, so they stay JS-number safe. Numbers are f64 at
 the boundary, stored exactly as on desktop (f64 in the store, f32 in GPU buffers).
 

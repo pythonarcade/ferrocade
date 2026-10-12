@@ -21,6 +21,8 @@ enum Target {
     Surface {
         surface: wgpu::Surface<'static>,
         config: wgpu::SurfaceConfiguration,
+        /// The sRGB format frames are drawn through (may be a view of a non-sRGB surface).
+        view_format: wgpu::TextureFormat,
         /// False while the window has zero size (minimized).
         configured: bool,
     },
@@ -67,10 +69,17 @@ impl Renderer {
             present_mode: wgpu::PresentMode::Fifo,
             desired_maximum_frame_latency: 2,
             alpha_mode: caps.alpha_modes[0],
-            view_formats: vec![],
+            // Browser WebGPU canvases only offer non-sRGB formats; draw through an sRGB view
+            // so colors and blending are identical to desktop's sRGB surfaces.
+            view_formats: if format.is_srgb() {
+                vec![]
+            } else {
+                vec![format.add_srgb_suffix()]
+            },
             color_space: wgpu::SurfaceColorSpace::Auto,
         };
-        let sprites = SpritePipeline::new(&device, format);
+        let view_format = format.add_srgb_suffix();
+        let sprites = SpritePipeline::new(&device, view_format);
         let mut renderer = Self {
             backend: adapter.get_info().backend,
             device,
@@ -79,6 +88,7 @@ impl Renderer {
             target: Target::Surface {
                 surface,
                 config,
+                view_format,
                 configured: false,
             },
         };
@@ -131,6 +141,7 @@ impl Renderer {
             surface,
             config,
             configured,
+            ..
         } = &mut self.target
         {
             if width == 0 || height == 0 {
@@ -262,24 +273,25 @@ impl Renderer {
             Target::Surface {
                 surface,
                 config,
+                view_format,
                 configured,
             } => {
+                let view_desc = wgpu::TextureViewDescriptor {
+                    format: Some(*view_format),
+                    ..Default::default()
+                };
                 if !*configured {
                     return Ok(None);
                 }
                 use wgpu::CurrentSurfaceTexture as Current;
                 match surface.get_current_texture() {
                     Current::Success(frame) => {
-                        let view = frame
-                            .texture
-                            .create_view(&wgpu::TextureViewDescriptor::default());
+                        let view = frame.texture.create_view(&view_desc);
                         Ok(Some((view, Some(frame))))
                     }
                     Current::Suboptimal(frame) => {
                         // Draw this frame anyway; reconfigure for the next one.
-                        let view = frame
-                            .texture
-                            .create_view(&wgpu::TextureViewDescriptor::default());
+                        let view = frame.texture.create_view(&view_desc);
                         surface.configure(&self.device, config);
                         Ok(Some((view, Some(frame))))
                     }

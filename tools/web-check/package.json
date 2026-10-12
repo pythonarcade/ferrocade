@@ -1,0 +1,9 @@
+{
+  "name": "ferrocade-web-check",
+  "private": true,
+  "description": "SPIKE: headless browser check for the Phase 1b web example",
+  "type": "module",
+  "dependencies": {
+    "puppeteer-core": "^24.0.0"
+  }
+}
