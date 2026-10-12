@@ -126,14 +126,14 @@ These follow plan.md "Project Structure":
 
 ### Tests for User Story 1
 
-- [ ] T020 [P] [US1] Write the window tests that don't need a display in `tests/test_window.py`:
+- [X] T020 [P] [US1] Write the window tests that don't need a display in `tests/test_window.py`:
   - `fc.Window(800, 600, "x")` raises `TypeError` (missing `filter`)
   - `filter="nearest"` raises `TypeError`
   - `width=0`, `height=0`, or `update_rate=0` raises `ValueError`
   - a subclass's `super().__init__(800, 600, "T", filter=fc.NEAREST)` works, and `width`/`height`/`title`/`filter`/`update_rate` are readable before `run()`
   - `clear()` outside `on_draw` raises `RuntimeError` with a message containing "on_draw"
   - `clear((300, 0, 0))` inside a frame raises `ValueError` (this can be tested via a display test)
-- [ ] T021 [P] [US1] Write the window tests that need a display in `tests/test_window.py` (`@pytest.mark.display`). Stop the loop by raising a custom `StopTest` from a callback after N frames, inside `pytest.raises(StopTest)`.
+- [X] T021 [P] [US1] Write the window tests that need a display in `tests/test_window.py` (`@pytest.mark.display`). Stop the loop by raising a custom `StopTest` from a callback after N frames, inside `pytest.raises(StopTest)`.
   - `on_update` receives `delta_time == update_rate`
   - `on_draw` is called repeatedly
   - an exception from `on_draw` propagates out of `run()`, with a traceback that includes the user's `on_draw` frame
@@ -142,7 +142,7 @@ These follow plan.md "Project Structure":
 
 ### Implementation for User Story 1
 
-- [ ] T022 [US1] Implement the clear-only Renderer in `crates/ferrocade/src/render/mod.rs`.
+- [X] T022 [US1] Implement the clear-only Renderer in `crates/ferrocade/src/render/mod.rs`.
   - **Init:** `pub async fn Renderer::new(instance, target)`, where the target is a surface or an offscreen texture. It requests an adapter, then a device with `wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits())`.
   - **Surface:** prefer an sRGB surface format, `PresentMode::Fifo`.
   - **`resize(physical_w, physical_h)`:** skip when either is 0.
@@ -153,8 +153,8 @@ These follow plan.md "Project Structure":
     - `DrawList` is a no-op until US2
     - submit and present
   - No depth attachment.
-- [ ] T023 [US1] Implement `crates/ferrocade/src/platform/mod.rs`: `pub fn run<C: GameCallbacks>(config: &WindowConfig, state: WindowState, callbacks: &mut C) -> Result<(), RunError<C::Error>>`. It dispatches to `desktop::run` under `#[cfg(not(target_arch = "wasm32"))]`, and the wasm32 arm returns `Error::Unsupported` (Phase 1b).
-- [ ] T024 [US1] Implement `crates/ferrocade/src/platform/desktop.rs` (research.md R2, R3, R9, R10).
+- [X] T023 [US1] Implement `crates/ferrocade/src/platform/mod.rs`: `pub fn run<C: GameCallbacks>(config: &WindowConfig, state: WindowState, callbacks: &mut C) -> Result<(), RunError<C::Error>>`. It dispatches to `desktop::run` under `#[cfg(not(target_arch = "wasm32"))]`, and the wasm32 arm returns `Error::Unsupported` (Phase 1b).
+- [X] T024 [US1] Implement `crates/ferrocade/src/platform/desktop.rs` (research.md R2, R3, R9, R10).
   - **Event loop:**
     - a thread-local `OnceCell<EventLoop<()>>`, created on first use
     - run with `EventLoopExtRunOnDemand::run_app_on_demand`, so `run()` can be called again
@@ -169,7 +169,7 @@ These follow plan.md "Project Structure":
     - **`CloseRequested`:** `event_loop.exit()`.
   - **Errors:** any callback error is stored, triggers `exit()`, and is returned as `RunError::Callback`.
   - On exit, drop the window and the renderer.
-- [ ] T025 [US1] Implement `Window` in `crates/ferrocade-py/src/py_window.rs` using the R4 pattern confirmed in T007.
+- [X] T025 [US1] Implement `Window` in `crates/ferrocade-py/src/py_window.rs` using the R4 pattern confirmed in T007.
   - **Class:** `#[pyclass(subclass)]`, with a `#[new]` that accepts `(*args, **kwargs)` and creates defaults.
   - **`__init__(self, width=800, height=600, title="Ferrocade", *, filter: Filter, update_rate=1/60)`:** validates via `WindowConfig::validate`. A missing `filter` produces Python's `TypeError`.
   - **Read-only getters:** `width`, `height` (from `WindowState`), `title`, `filter`, `update_rate`.
@@ -180,8 +180,8 @@ These follow plan.md "Project Structure":
     - build `PyCallbacks { obj: Py<PyAny> }`: `update` calls `obj.call_method1("on_update", (dt,))`, `draw` calls `obj.call_method0("on_draw")`, and `check_interrupt` calls `py.check_signals()`
     - call `platform::run`, then re-raise a `RunError::Callback(PyErr)` unchanged, and map `RunError::Engine` via `to_pyerr`
   - Register it in `lib.rs`.
-- [ ] T026 [US1] Create `python/ferrocade/color.py` with `BLACK=(0,0,0)`, `WHITE=(255,255,255)`, `DARK_GRAY=(32,32,32)`, `RED`, `GREEN`, `BLUE`, `CORNFLOWER_BLUE=(100,149,237)`. Export `Window` and `color` from `python/ferrocade/__init__.py`, and add the `Window` stubs (signature per contracts/python-api.md) to `python/ferrocade/_ferrocade.pyi`.
-- [ ] T027 [US1] Run `maturin develop` and `pytest tests/test_window.py`, and check the independent test manually (an 800×600 "Ferrocade" window, the clear color, closing gives exit 0, Ctrl+C raises `KeyboardInterrupt`).
+- [X] T026 [US1] Create `python/ferrocade/color.py` with `BLACK=(0,0,0)`, `WHITE=(255,255,255)`, `DARK_GRAY=(32,32,32)`, `RED`, `GREEN`, `BLUE`, `CORNFLOWER_BLUE=(100,149,237)`. Export `Window` and `color` from `python/ferrocade/__init__.py`, and add the `Window` stubs (signature per contracts/python-api.md) to `python/ferrocade/_ferrocade.pyi`.
+- [X] T027 [US1] Run `maturin develop` and `pytest tests/test_window.py`, and check the independent test manually (an 800×600 "Ferrocade" window, the clear color, closing gives exit 0, Ctrl+C raises `KeyboardInterrupt`).
 
 **Checkpoint**: US1 is complete. A blank window works end to end from Python.
 

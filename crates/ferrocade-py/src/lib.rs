@@ -2,6 +2,7 @@
 
 mod errors;
 mod py_filter;
+mod py_window;
 
 use pyo3::prelude::*;
 
@@ -11,5 +12,6 @@ fn _ferrocade(m: &Bound<'_, PyModule>) -> PyResult<()> {
     let _ = env_logger::try_init();
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     py_filter::register(m)?;
+    m.add_class::<py_window::PyWindow>()?;
     Ok(())
 }
