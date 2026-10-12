@@ -345,18 +345,18 @@ These follow plan.md "Project Structure":
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T055 [P] Review `python/ferrocade/_ferrocade.pyi` and `python/ferrocade/__init__.py` against contracts/python-api.md: every public name, signature, and property type, with `filter` keyword-only and required on `Window` (FR-021).
-- [ ] T056 [P] Update `CLAUDE.md` "Environment": replace "Build/test commands: TBD" with the setup, build, and test commands from quickstart.md. Add a "Building from source" pointer to `README.md`.
-- [ ] T057 Portability audit (constitution III) of `crates/ferrocade/src`:
+- [X] T055 [P] Review `python/ferrocade/_ferrocade.pyi` and `python/ferrocade/__init__.py` against contracts/python-api.md: every public name, signature, and property type, with `filter` keyword-only and required on `Window` (FR-021).
+- [X] T056 [P] Update `CLAUDE.md` "Environment": replace "Build/test commands: TBD" with the setup, build, and test commands from quickstart.md. Add a "Building from source" pointer to `README.md`.
+- [X] T057 Portability audit (constitution III) of `crates/ferrocade/src`:
   - no `std::time::Instant`
   - no `winit`/`pollster` use outside `platform/`
   - no `std::thread` spawning
   - limits are `downlevel_webgl2_defaults`
   - shaders are WGSL only
   - Fix anything found.
-- [ ] T058 Run `cargo fmt --all`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, `maturin develop`, and `pytest`. Everything must pass cleanly.
-- [ ] T059 Run quickstart.md validations V1 to V10 (including V7b), and record the results (pass/fail, notes, machine) in `docs/research/phase1-validation.md`.
-- [ ] T060 Update `docs/spec/ENGINE_SPEC.md`: mark Phase 1 complete in §10, add decision log entries for implementation decisions (the R4 outcome, and any deviations from the plan), and note the known limitation "run_app_on_demand is desktop-only; web uses spawn_app (Phase 1b)".
+- [X] T058 Run `cargo fmt --all`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, `maturin develop`, and `pytest`. Everything must pass cleanly.
+- [X] T059 Run quickstart.md validations V1 to V10 (including V7b), and record the results (pass/fail, notes, machine) in `docs/research/phase1-validation.md`.
+- [X] T060 Update `docs/spec/ENGINE_SPEC.md`: mark Phase 1 complete in §10, add decision log entries for implementation decisions (the R4 outcome, and any deviations from the plan), and note the known limitation "run_app_on_demand is desktop-only; web uses spawn_app (Phase 1b)".
 
 ---
 

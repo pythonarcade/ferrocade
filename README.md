@@ -2,7 +2,20 @@
 
 A 2D game engine with a Python API and a Rust core, rendering through wgpu. Planned platforms: Windows, macOS, and the web.
 
-> Early development: nothing runnable yet. See the [engine spec](docs/spec/ENGINE_SPEC.md) for the design and roadmap.
+> Early development. Phase 1 (a window and a centered sprite) works on Windows. See the [engine spec](docs/spec/ENGINE_SPEC.md) for the design and roadmap.
+
+## Building from source
+
+You need Rust (stable, with the MSVC toolchain on Windows), the Visual Studio C++ Build Tools, Python 3.13+, and [uv](https://docs.astral.sh/uv/).
+
+```powershell
+uv venv; .venv\Scripts\Activate.ps1
+uv pip install maturin pytest
+maturin develop
+python examples/01_centered_ship.py
+```
+
+The complete build and validation steps are in [specs/001-centered-ship/quickstart.md](specs/001-centered-ship/quickstart.md).
 
 **Repository:** https://github.com/pythonarcade/ferrocade
 

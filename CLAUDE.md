@@ -27,4 +27,19 @@ The project's non-negotiable principles live in the Spec Kit constitution and ar
 - Development machine: Windows 11, PowerShell (Git Bash also available).
 - Toolchain: Rust stable (`x86_64-pc-windows-msvc`, via rustup), Visual Studio Build Tools 2026 (MSVC + Windows SDK), Python 3.13, uv.
 - Spec Kit Python scripts may crash on Windows with console encoding errors. Run them with `PYTHONIOENCODING=utf-8` (or set `PYTHONUTF8=1`).
-- Build/test commands: TBD (to be added in Phase 1).
+- The Claude Code shell may not have `~/.cargo/bin` on PATH. Prefix commands with `export PATH="$HOME/.cargo/bin:$PATH"` (Git Bash) if `cargo` isn't found.
+
+## Build & test
+Run these from the repository root (PowerShell shown; the Git Bash equivalents are similar):
+
+```powershell
+uv venv; .venv\Scripts\Activate.ps1; uv pip install maturin pytest   # one-time setup
+maturin develop                 # build + install the extension into .venv (after every Rust change)
+cargo test --workspace          # Rust tests, incl. offscreen GPU render checks (skip without a GPU)
+pytest                          # Python API tests; set FERROCADE_HEADLESS=1 to skip real-window tests
+cargo clippy --workspace --all-targets -- -D warnings
+cargo fmt --all
+python examples/01_centered_ship.py
+```
+
+The full validation guide for Phase 1 is in `specs/001-centered-ship/quickstart.md`.

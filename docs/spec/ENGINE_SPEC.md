@@ -330,6 +330,7 @@ This is the **hardest platform requirement**. The engine API is Python, so the b
 Each phase ends with a runnable example in `examples/` that demonstrates its goal. Phases run on Windows unless noted.
 
 ### Phase 1: Window + centered ship (v1)
+- **Status (2026-10-12): implemented on Windows.** All automated checks pass (27 Rust tests, including offscreen GPU render checks, and 43 pytest tests). The visual and interactive checks (quickstart V3–V6, V9, V10) are pending the owner. See `docs/research/phase1-validation.md`.
 - **Goal:** open a window and draw `ship.png` centered (see §3).
 - **Proves:** the whole stack works: Python → PyO3 → Rust → wgpu → screen.
 - **Delivers:** `Window`, `Texture`, `Sprite`, `SpriteList`, a texture cache, the textured-quad pipeline, and PNG loading.
@@ -475,6 +476,8 @@ ferrocade/                 # repo root
 | 2026-10-12 | Repository layout (§13); crates `ferrocade` + `ferrocade-py` | Spec moved to `docs/spec/` |
 | 2026-10-12 | Adopt Spec Kit; one feature spec per roadmap phase | §13 "Spec Kit workflow" |
 | 2026-10-12 | Minimum Python 3.13, stable ABI (`abi3-py313`) | Owner: no backward-compat need; don't go newer without a benefit. §6 |
+| 2026-10-12 | Phase 1 implemented: native `__init__` works for subclassable abi3 pyclasses (R4 confirmed; no Python wrapper classes needed) | `specs/001-centered-ship/research.md` R4 |
+| 2026-10-12 | Known limitation: `run()` uses winit `run_app_on_demand` (desktop-only); the web build needs `spawn_app` | Phase 1b |
 | 2026-10-12 | Texture filtering: no default; `filter=` required on `Window`, optional override on `Texture` | Recurring issue; Phase 1 example uses `NEAREST` |
 | 2026-10-12 | Phase 1 spec (`specs/001-centered-ship`) defaults confirmed | Logical pixels, no re-center on resize, callback exceptions propagate |
 | 2026-10-12 | Constitution v1.0.0 ratified (draft, pending owner review) | Six principles drawn from confirmed decisions |
