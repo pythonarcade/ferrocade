@@ -61,17 +61,16 @@ bullets.collisions_with(rocks) -> list[tuple[Sprite, Sprite]]
 balls.collisions() -> list[tuple[Sprite, Sprite]]            # pairs within one list
 ```
 
-- Sprites with no collider never collide.
+- Colliders are attached explicitly (owner decision); sprites with no collider never collide.
 - Collider `offset=(x, y)` positions a shape relative to the sprite center (rotating with it).
 - Axis-aligned vs. rotated box: one `BoxCollider` class with `rotates=` (*Proposed*), or two classes.
 
 ## 4. Open questions for the Phase 5 spec
 
-1. **Default colliders.** Should shape sprites (`CircleSprite`, `RectangleSprite`) get a matching
-   collider automatically, or must every collider be attached explicitly? (Explicit fits "separate
-   entities"; automatic is friendlier.)
-2. **Colliders without sprites** (invisible triggers): in Phase 5, or later? They'd need their own
-   position and their own list type.
+1. ~~Default colliders~~ **Decided (owner, 2026-10-12): colliders must be attached explicitly.**
+   No sprite, including shape sprites, gets a collider automatically.
+2. ~~Colliders without sprites~~ **Decided (owner, 2026-10-12): backlog, not Phase 5.** Phase 5
+   colliders are always attached to a sprite.
 3. **Box naming and options:** the exact class names, and whether scale applies to colliders.
 4. **Query result types:** lists of sprites vs. a lighter result object; deduplication and ordering
    of pairs.
@@ -79,6 +78,7 @@ balls.collisions() -> list[tuple[Sprite, Sprite]]            # pairs within one 
 
 ## 5. Later (not Phase 5)
 
+- **Backlog:** colliders without a sprite (invisible triggers with their own position).
 - **Backlog:** declared collision pairs checked every frame (`collisions.watch(a, b)`).
 - **Showcase ideas:** enter/exit events delivered in a batch after each update, and built-in Rust
   responses (bounce, stop, solid walls).

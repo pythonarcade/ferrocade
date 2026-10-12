@@ -459,7 +459,7 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 *(Architecture decided by the owner, 2026-10-12. Full design: `docs/design/collision.md`. API details are Proposed until the Phase 5 spec.)*
 
 ### Decided architecture (2026-10-12)
-1. **Colliders are separate entities** (Unity/Godot style), attached to sprites and following their transform; not a built-in property of `Sprite`.
+1. **Colliders are separate entities** (Unity/Godot style), attached to sprites and following their transform; not a built-in property of `Sprite`. They're **attached explicitly** (no automatic colliders, even on shape sprites). Colliders without a sprite are in the backlog.
 2. **Shapes:** start with **circle, axis-aligned box, and rotated box**. The design must stay expandable (shape enum + pair tests, with a generic convex fallback) so convex polygons, auto hit boxes from texture alpha, capsules, and pixel masks can be added later.
 3. **What is checked:** **list-based queries** (Arcade style). Declared pairs checked automatically every frame are in the backlog.
 4. **Results to Python:** **batched queries** first. Enter/exit events and built-in Rust responses (bounce/stop/solid) are ideas for the showcase, not committed.
@@ -529,6 +529,7 @@ The sections below are the original research and options, kept for reference.
 - [ ] Physics response (after the collision system, §11)
 - [ ] Angle-to-velocity helper: set a sprite's velocity from a heading (degrees, counter-clockwise) and a speed, so users rarely need `math.radians`/`cos`/`sin` (e.g. something like `sprite.set_velocity_from_angle(angle, speed)`; the exact API is TBD)
 - [ ] Shapes/primitives drawing
+- [ ] Collision: colliders without a sprite (invisible triggers with their own position); not Phase 5
 - [ ] Collision: declared collision pairs checked automatically every frame (e.g. `collisions.watch(bullets, asteroids)`); needed for engine-driven events and responses (§11)
 - [ ] Collision shapes beyond Phase 5: convex polygon, auto hit box from texture alpha, capsule, pixel mask (§11)
 - [ ] `Window.close()`: close the window from game code (e.g. quit on Escape); left out of Phase 4
@@ -627,6 +628,7 @@ ferrocade/                 # repo root
 | 2026-10-12 | Key modifiers report the keys held after the event; no `Window.close()` / Escape-to-quit in Phase 4 | Owner confirmed at Phase 4 planning; `Window.close()` added to the backlog |
 | 2026-10-12 | Keyboard behavior: physical keys, auto-repeat ignored, focus loss releases held keys, events delivered once per frame before `on_update` | Phase 4 spec defaults; the owner reviewed the spec and plan without changes; §5 |
 | 2026-10-12 | Collision architecture: separate collider entities; circle, axis-aligned box, rotated box first (expandable); list-based queries; batched query results first; spatial hash grid per list; written from scratch | Owner decisions on §11 questions 1–6; `docs/design/collision.md`. Declared pairs → backlog; enter/exit events and built-in responses → showcase ideas |
+| 2026-10-12 | Colliders are attached explicitly (no automatic colliders); colliders without a sprite go to the backlog | Owner answers to the collision open questions 1–2; `docs/design/collision.md` |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
 | 2026-10-12 | Collision detection implemented in Rust | Design open (§11) |
 | 2026-10-12 | winit for windowing | Confirmed |
