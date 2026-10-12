@@ -69,5 +69,10 @@ After all the engine changes (wasm32 features, `load_from_bytes`, `backend_name`
 `cargo test --workspace` gives 29 passed, `pytest` gives 43 passed, and
 `cargo clippy --workspace --all-targets -D warnings` plus `cargo clippy -p ferrocade-web --target wasm32-unknown-unknown -D warnings` are clean.
 
+## W10: reproducibility from a clean clone ✅
+`git clone` into a temp directory, then `tools\build_web.ps1` (only the documented steps), then serve on :8001,
+then `check.mjs`: `ship-visible`, BrowserWebGpu, bbox 350,262,448,336 (99×75, −0.5 px), example unchanged,
+2072 ms. The temp clone was deleted afterwards.
+
 ## Owner visual check
 *Pending: open http://localhost:8000/web/ in Edge or Chrome while `tools\build_web.ps1 -Serve` runs.*

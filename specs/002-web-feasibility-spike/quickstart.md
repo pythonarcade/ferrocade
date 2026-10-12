@@ -8,7 +8,7 @@
 
 ```powershell
 rustup target add wasm32-unknown-unknown
-cargo install wasm-bindgen-cli --version <match Cargo.lock's wasm-bindgen>   # versions must match exactly
+cargo install wasm-bindgen-cli --version 0.2.129   # must match Cargo.lock's wasm-bindgen exactly
 ```
 
 You also need Edge or Chrome, plus internet access, because Pyodide 314.0.7 loads from its CDN.
@@ -23,16 +23,21 @@ python -m http.server 8000          # from the repo root
 # open http://localhost:8000/web/?backend=webgl2   (force WebGL2)
 ```
 
-These steps get wrapped in `tools/build_web.ps1` during implementation.
+These steps are wrapped in `tools\build_web.ps1` (add `-Serve` to also start the server).
+
+**Verified 2026-10-12** with rustc 1.99.0, wasm-bindgen 0.2.129, wgpu 30.0.1, Pyodide 314.0.7, and current Chrome and Edge on Windows 11.
 
 ## Approach A: wheel attempt (WSL2 Ubuntu)
 
 > **Gate:** this installs rustup, emsdk (Emscripten 5.0.3), and pyodide-build into the WSL home
 > directory. Confirm with the owner before doing it (research.md R9).
 
-The steps (A1 is the core-only wheel, A2 adds wgpu) are recorded verbatim in
-`docs/research/web-spike.md` as they're carried out. The expected A2 outcome is the
-gfx-rs/wgpu#10274 failure.
+```bash
+bash spike/pyodide-wheel/setup_wsl_toolchain.sh   # one-time (owner approved 2026-10-12)
+bash spike/pyodide-wheel/build.sh                 # A1: core-only wheel (loads and runs in Pyodide)
+bash spike/pyodide-wheel/build.sh render          # A2: links wgpu; builds, but fails to load (wgpu#10274)
+```
+Results are in `spike/pyodide-wheel/NOTES.md`.
 
 ## Validation scenarios
 

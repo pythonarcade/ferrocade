@@ -43,3 +43,11 @@ python examples/01_centered_ship.py
 ```
 
 The full validation guide for Phase 1 is in `specs/001-centered-ship/quickstart.md`.
+
+### Web build (Phase 1b spike, approach B)
+```powershell
+rustup target add wasm32-unknown-unknown; cargo install wasm-bindgen-cli --version 0.2.129   # one-time
+tools\build_web.ps1 -Serve       # build web\pkg and serve the repo root on :8000; open http://localhost:8000/web/
+cd tools\web-check; npm install; node check.mjs "http://localhost:8000/web/?diagnostics=1"   # headless check
+```
+`wasm-bindgen-cli` must match the `wasm-bindgen` version in `Cargo.lock`. Findings and status are in `docs/research/web-spike.md`.

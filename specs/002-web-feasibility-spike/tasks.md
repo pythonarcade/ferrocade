@@ -183,7 +183,7 @@ description: "Task list for Phase 1b — Web Feasibility Spike"
   - W7: download bytes split into Pyodide, engine wasm+js, and assets.
   - W8: temporarily serve without `ship.png` (rename it, then restore) and confirm the error panel names the file.
   - Record everything in `spike/web-results.md`.
-- [ ] T036 [US2] **W9:** desktop regression (`cargo test --workspace`, `maturin develop`, `pytest`) all pass. Ask the owner to open `/web/` in Edge or Chrome and confirm visually; record their confirmation in `spike/web-results.md`.
+- [X] T036 [US2] **W9:** desktop regression (`cargo test --workspace`, `maturin develop`, `pytest`) all pass. Ask the owner to open `/web/` in Edge or Chrome and confirm visually; record their confirmation in `spike/web-results.md`.
 
 **Checkpoint**: US2 is complete (or its blockers are documented), and the evidence feeds T018.
 
@@ -195,17 +195,17 @@ description: "Task list for Phase 1b — Web Feasibility Spike"
 
 **Independent Test (W10)**: clean checkout, then the documented steps, then the browser example appears.
 
-- [ ] T037 [US3] Update `specs/002-web-feasibility-spike/quickstart.md` and the report's **Reproduction steps** with the exact verified commands and versions (Rust, wasm-bindgen-cli 0.2.129, Pyodide 314.0.7, the browser version). Add a "Web build" block to `CLAUDE.md` "Build & test" (`tools/build_web.ps1 -Serve`, then open `http://localhost:8000/web/`).
-- [ ] T038 [US3] **W10:** clone the repo into a temporary directory (`git clone . %TEMP%\ferrocade-w10`), follow only the documented steps, and run the T031 check against it. Record the result, and fix any undocumented step found.
-- [ ] T039 [P] [US3] If T012–T014 ran, copy the verified WSL build steps for approach A from `spike/pyodide-wheel/NOTES.md` into the report's Reproduction steps, marked "Approach A experiment (WSL2)".
+- [X] T037 [US3] Update `specs/002-web-feasibility-spike/quickstart.md` and the report's **Reproduction steps** with the exact verified commands and versions (Rust, wasm-bindgen-cli 0.2.129, Pyodide 314.0.7, the browser version). Add a "Web build" block to `CLAUDE.md` "Build & test" (`tools/build_web.ps1 -Serve`, then open `http://localhost:8000/web/`).
+- [X] T038 [US3] **W10:** clone the repo into a temporary directory (`git clone . %TEMP%\ferrocade-w10`), follow only the documented steps, and run the T031 check against it. Record the result, and fix any undocumented step found.
+- [X] T039 [P] [US3] If T012–T014 ran, copy the verified WSL build steps for approach A from `spike/pyodide-wheel/NOTES.md` into the report's Reproduction steps, marked "Approach A experiment (WSL2)".
 
 ---
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T040 Audit the spike markers: `grep -rn "SPIKE:"` across `crates/ web/ tools/ spike/`. Every hit must appear in the report's engine-impact table (FR-012).
-- [ ] T041 Lint: `cargo clippy --workspace --all-targets -- -D warnings` (desktop) and `cargo clippy -p ferrocade-web --target wasm32-unknown-unknown -- -D warnings`. Run `cargo fmt --all`.
-- [ ] T042 **W1 final review** of `docs/research/web-spike.md` against data-model.md: every approach has exactly one status, evidence or a reason, and specific blockers; the recommendation is **Proposed**; risks and next steps are present; SC-001 to SC-007 are each addressed. Update `docs/research/README.md` to link it.
+- [X] T040 Audit the spike markers: `grep -rn "SPIKE:"` across `crates/ web/ tools/ spike/`. Every hit must appear in the report's engine-impact table (FR-012).
+- [X] T041 Lint: `cargo clippy --workspace --all-targets -- -D warnings` (desktop) and `cargo clippy -p ferrocade-web --target wasm32-unknown-unknown -- -D warnings`. Run `cargo fmt --all`.
+- [X] T042 **W1 final review** of `docs/research/web-spike.md` against data-model.md: every approach has exactly one status, evidence or a reason, and specific blockers; the recommendation is **Proposed**; risks and next steps are present; SC-001 to SC-007 are each addressed. Update `docs/research/README.md` to link it.
 
 ---
 
