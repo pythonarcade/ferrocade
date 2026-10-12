@@ -1,0 +1,32 @@
+<!doctype html>
+<!-- SPIKE: load the approach-A wheel in Pyodide 314.0.7 and call it. Serve the repo root,
+     open /spike/pyodide-wheel/smoke.html?wheel=<filename in dist/>. -->
+<meta charset="utf-8"><title>A1 smoke</title>
+<pre id="out">running…</pre>
+<script type="module">
+const out = document.getElementById("out");
+const log = (t) => { out.textContent += "\n" + t; console.log("[a1] " + t); };
+try {
+  const { loadPyodide } = await import("https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pyodide.mjs");
+  const pyodide = await loadPyodide();
+  await pyodide.loadPackage("micropip");
+  const wheel = new URLSearchParams(location.search).get("wheel");
+  const ship = new Uint8Array(await (await fetch("../../assets/images/ship.png")).arrayBuffer());
+  pyodide.globals.set("ship_bytes", ship);
+  const result = await pyodide.runPythonAsync(`
+import micropip
+await micropip.install("${new URL("dist/" + wheel, location.href)}", deps=False)
+import ferrocade_a1
+data = bytes(ship_bytes.to_py())
+lines = [f"texture_size={ferrocade_a1.texture_size('assets/images/ship.png', data)}",
+         f"store_smoke={ferrocade_a1.store_smoke('assets/images/ship.png', data)}"]
+if hasattr(ferrocade_a1, "renderer_smoke"):
+    lines.append(f"renderer_smoke={ferrocade_a1.renderer_smoke()}")
+chr(10).join(lines)
+`);
+  log(result);
+  log("A1-SMOKE-OK");
+} catch (e) {
+  log("A1-SMOKE-ERROR " + (e?.message ?? e));
+}
+</script>

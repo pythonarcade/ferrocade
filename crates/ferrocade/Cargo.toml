@@ -5,8 +5,14 @@ version.workspace = true
 edition.workspace = true
 repository.workspace = true
 
+[features]
+default = ["render"]
+# The GPU renderer and windowed game loop. Without it, the core is just its data layer
+# (textures, sprite store, timing), which builds anywhere, including Emscripten.
+render = ["dep:wgpu", "dep:winit", "dep:pollster"]
+
 [dependencies]
-wgpu.workspace = true
+wgpu = { workspace = true, optional = true }
 image.workspace = true
 web-time.workspace = true
 bytemuck.workspace = true
@@ -16,12 +22,12 @@ thiserror.workspace = true
 log.workspace = true
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-pollster.workspace = true
-winit.workspace = true
+pollster = { workspace = true, optional = true }
+winit = { workspace = true, optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 # Browser backends: WebGPU where available, WebGL2 as the fallback.
-wgpu = { workspace = true, features = ["webgpu", "webgl"] }
+wgpu = { workspace = true, features = ["webgpu", "webgl"], optional = true }
 
 [dev-dependencies]
 pollster.workspace = true

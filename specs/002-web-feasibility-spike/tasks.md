@@ -81,18 +81,18 @@ description: "Task list for Phase 1b — Web Feasibility Spike"
 - [X] T010 [US1] **Owner gate.** Ask the owner for permission to install the approach-A toolchain in WSL2 Ubuntu 22.04's home directory: rustup (stable ≥ 1.93, target `wasm32-unknown-emscripten`), emsdk at Pyodide 314's Emscripten **5.0.3**, Python 3.14, and `pyodide-build`. That's a few GB.
   - Record the answer in `spike/pyodide-wheel/NOTES.md`.
   - **If declined:** set approach A's status to `blocked`, with desk evidence only (cite wgpu#10274, pyodide#6476, the winit platform error) and the note "hands-on not attempted: owner declined toolchain install". Skip T011–T015.
-- [ ] T011 [US1] Add a default-on Cargo feature `render` to `crates/ferrocade/Cargo.toml`. It gates the `render` and `platform` modules plus the `wgpu`/`winit`/`pollster` dependencies (`lib.rs` uses `#[cfg(feature = "render")]`).
+- [X] T011 [US1] Add a default-on Cargo feature `render` to `crates/ferrocade/Cargo.toml`. It gates the `render` and `platform` modules plus the `wgpu`/`winit`/`pollster` dependencies (`lib.rs` uses `#[cfg(feature = "render")]`).
   - This lets the core's data layer (texture, store, timestep, color, frame) build without wgpu.
   - Verify that the desktop builds are unchanged (`cargo test --workspace`, `maturin develop`).
-- [ ] T012 [US1] Create the A1 experiment crate `spike/pyodide-wheel/` (outside the workspace; its own `Cargo.toml` with `[workspace]`).
+- [X] T012 [US1] Create the A1 experiment crate `spike/pyodide-wheel/` (outside the workspace; its own `Cargo.toml` with `[workspace]`).
   - `pyo3 = "0.29"` **without** abi3, and `ferrocade = { path = "../../crates/ferrocade", default-features = false }`.
   - A `#[pymodule] ferrocade_a1` exposing `texture_size(path: str, data: bytes) -> tuple[int, int]` (via `load_from_bytes`) and `store_smoke() -> int`, which creates 3 sprites in a list, removes one, and returns the length.
   - Add `spike/pyodide-wheel/build.sh` (WSL), which sources emsdk 5.0.3, sets `CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_RUSTFLAGS` from `pyodide config get rustflags`, and runs `pyodide build` (or `maturin build --target wasm32-unknown-emscripten -i python3.14`).
-- [ ] T013 [US1] Build A1 in WSL2.
+- [X] T013 [US1] Build A1 in WSL2.
   - Expect a wheel tagged `cp314-cp314-pyemscripten_2026_0_wasm32`.
   - Add `spike/pyodide-wheel/smoke.html`, which loads Pyodide 314.0.7 from the CDN, runs `micropip.install` on the local wheel URL, and calls both functions with `ship.png` bytes. Serve it over `python -m http.server`.
   - Record the results verbatim (the wheel filename, the console output, any errors) in `spike/pyodide-wheel/NOTES.md`.
-- [ ] T014 [US1] A2: rebuild with `default-features = true` (render enabled), and add a function that calls `pollster`-free `Renderer::offscreen`.
+- [X] T014 [US1] A2: rebuild with `default-features = true` (render enabled), and add a function that calls `pollster`-free `Renderer::offscreen`.
   - Record the exact failure, with build or link output, in `spike/pyodide-wheel/NOTES.md`. The expected failures are wgpu#10274 `__wbindgen_placeholder__` imports, or winit "platform not supported".
   - If it unexpectedly builds and loads, record that and tell the owner before continuing.
 - [ ] T015 [US1] Write approach A's findings into `docs/research/web-spike.md`: the status (`blocked` or `proven`), A1 and A2 evidence, tool versions, blockers with upstream links and how to tell when they're resolved, and the engine impact (feature-gated core: *done in spike* / *nice to have*).

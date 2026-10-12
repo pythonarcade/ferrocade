@@ -1,5 +1,7 @@
 //! Renders sprite lists offscreen and checks the pixels (skipped when no GPU is available).
 
+#![cfg(feature = "render")]
+
 use std::path::Path;
 
 use ferrocade::color;

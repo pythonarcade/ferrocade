@@ -1,0 +1,12 @@
+[build-system]
+requires = ["maturin>=1.15,<2"]
+build-backend = "maturin"
+
+[project]
+name = "ferrocade-a1"
+version = "0.0.1"
+requires-python = ">=3.14"
+
+[tool.maturin]
+module-name = "ferrocade_a1"
+features = ["pyo3/extension-module"]

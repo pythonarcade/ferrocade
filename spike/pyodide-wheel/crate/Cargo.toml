@@ -1,0 +1,21 @@
+# SPIKE: approach A experiment (Phase 1b). A minimal PyO3 extension built as a Pyodide wheel.
+# A1: core data layer only (no wgpu). A2: `--features render` pulls in wgpu.
+[package]
+name = "ferrocade-a1"
+version = "0.0.1"
+edition = "2024"
+publish = false
+
+[lib]
+name = "ferrocade_a1"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = "0.29"   # no abi3: Pyodide wheels are version-specific (cp314)
+ferrocade = { path = "../../../crates/ferrocade", default-features = false }
+wgpu = { version = "30", optional = true }
+
+[features]
+render = ["ferrocade/render", "dep:wgpu"]
+
+[workspace]
