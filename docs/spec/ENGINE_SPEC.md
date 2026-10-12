@@ -184,6 +184,11 @@ Game().run()
 ## 6. Python Integration
 
 - **Bindings:** PyO3, with maturin for building and packaging.
+- **Minimum Python version: 3.13.** Backward compatibility isn't a goal yet, so the floor is set by what's useful, not by reach:
+  - It matches the development machine (3.13), so there's no untested older version to support.
+  - **It keeps the web path open:** Pyodide (§9) ships a specific CPython version that typically lags the newest release. A floor newer than Pyodide's Python would block the Pyodide option. Check Pyodide's current version in the Phase 1b spike.
+  - Build with PyO3's stable ABI (`abi3-py313`), so one compiled wheel per platform works on 3.13 and every later version.
+  - Going newer (3.14/3.15) brings no feature the engine needs today. Raise the floor later if a concrete benefit appears (e.g. free-threading or newer stable-ABI features).
 - Rust owns the main loop, rendering, and hot paths, while Python owns game logic.
 - Python callbacks (`on_draw`, `on_update`) are called from the Rust event loop while holding the GIL.
 - **Alternative considered:** wgpu-py. It was rejected as the primary path because it puts rendering in Python.
@@ -462,6 +467,8 @@ ferrocade/                 # repo root
 | 2026-10-12 | Working name: **Ferrocade** (`import ferrocade as fc`) | Can change later |
 | 2026-10-12 | Repository layout (§13); crates `ferrocade` + `ferrocade-py` | Spec moved to `docs/spec/` |
 | 2026-10-12 | Adopt Spec Kit; one feature spec per roadmap phase | §13 "Spec Kit workflow" |
+| 2026-10-12 | Minimum Python 3.13, stable ABI (`abi3-py313`) | Owner: no backward-compat need; don't go newer without a benefit. §6 |
+| 2026-10-12 | Phase 1 spec (`specs/001-centered-ship`) defaults confirmed | Logical pixels, no re-center on resize, callback exceptions propagate |
 | 2026-10-12 | Constitution v1.0.0 ratified (draft, pending owner review) | Six principles drawn from confirmed decisions |
 | 2026-10-12 | Python-only public API, Rust backend | Users never write Rust |
 | 2026-10-12 | wgpu for rendering | Native standalone, multi-backend, optional web |
