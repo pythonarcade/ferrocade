@@ -76,40 +76,40 @@ These follow plan.md "Project Structure":
 - [X] T009 [P] Implement `crates/ferrocade/src/error.rs` with a `thiserror` enum `Error`.
   - Variants: `NotFound { path }`, `Io { path, source }`, `Decode { path, reason }`, `Unsupported { path, reason }`, `NotInFrame { op: &'static str }` (message: `"{op}() can only be called inside on_draw()"`), `InvalidArgument(String)`, `Gpu(String)`, `EventLoop(String)`.
   - Add `pub type Result<T> = std::result::Result<T, Error>`.
-- [ ] T010 [P] Implement the asset loader in `crates/ferrocade/src/assets.rs`.
+- [X] T010 [P] Implement the asset loader in `crates/ferrocade/src/assets.rs`.
   - `pub fn canonicalize(path: &Path) -> Result<PathBuf>`: resolves relative paths against the current working directory. A missing file returns `Error::NotFound { path }`.
   - `pub fn read_bytes(path: &Path) -> Result<Vec<u8>>`: a filesystem implementation under `#[cfg(not(target_arch = "wasm32"))]`, and a wasm32 stub that returns `Error::Unsupported` (the web loader comes in Phase 1b).
-- [ ] T011 [P] Add `pub enum Filter { Nearest, Linear }` (`Copy`, `Eq`, `Hash`, `Debug`) to `crates/ferrocade/src/texture.rs`. There is deliberately no `Default` impl (research.md R11: "there is no default filter").
-- [ ] T012 [P] Implement `crates/ferrocade/src/color.rs`.
+- [X] T011 [P] Add `pub enum Filter { Nearest, Linear }` (`Copy`, `Eq`, `Hash`, `Debug`) to `crates/ferrocade/src/texture.rs`. There is deliberately no `Default` impl (research.md R11: "there is no default filter").
+- [X] T012 [P] Implement `crates/ferrocade/src/color.rs`.
   - `pub fn parse_rgba(components: &[i64]) -> Result<[u8; 4]>`. It accepts a length of 3 or 4 (alpha defaults to 255) and each component must be 0–255; anything else is `Error::InvalidArgument`.
   - `pub fn to_linear_f32(rgba: [u8; 4]) -> [f64; 4]`: an sRGB→linear conversion for RGB (alpha stays linear), because the surface is sRGB and wgpu clear colors are linear.
   - `pub const DARK_GRAY: [u8; 4] = [32, 32, 32, 255]`.
   - Unit tests in the same file.
-- [ ] T013 [P] Implement `crates/ferrocade/src/timestep.rs` per data-model.md.
+- [X] T013 [P] Implement `crates/ferrocade/src/timestep.rs` per data-model.md.
   - `pub struct FixedTimestep { step: f64, accumulator: f64, max_steps_per_frame: u32 }`, with `max_steps_per_frame` set to 5.
   - `new(step)`, and `advance(elapsed: f64) -> u32`, which returns the number of updates to run. "Excess accumulated time is discarded" when the cap is hit.
-- [ ] T014 [P] Write `crates/ferrocade/tests/timestep.rs`, covering:
+- [X] T014 [P] Write `crates/ferrocade/tests/timestep.rs`, covering:
   - `advance(1/60)` with a step of 1/60 returns 1
   - `advance(0.5)` returns 5 and leaves the accumulator below `step`
   - fractional accumulation across calls
   - zero elapsed returns 0
-- [ ] T015 Create the skeleton of `crates/ferrocade/src/store.rs`: the `slotmap::new_key_type! { pub struct SpriteId; pub struct ListId; }` keys, plus empty `SpriteStore` and global-accessor stubs (filled in by US2/US3).
-- [ ] T016 Implement `crates/ferrocade/src/frame.rs` (depends on T015 for `ListId`).
+- [X] T015 Create the skeleton of `crates/ferrocade/src/store.rs`: the `slotmap::new_key_type! { pub struct SpriteId; pub struct ListId; }` keys, plus empty `SpriteStore` and global-accessor stubs (filled in by US2/US3).
+- [X] T016 Implement `crates/ferrocade/src/frame.rs` (depends on T015 for `ListId`).
   - A thread-local `FrameQueue { active: bool, commands: Vec<FrameCommand> }`, with `enum FrameCommand { Clear([f64; 4]), DrawList(ListId) }`.
   - `pub fn begin()` and `pub fn end() -> Vec<FrameCommand>`.
   - `pub fn push(cmd, op: &'static str) -> Result<()>`. It returns `Error::NotInFrame { op }` when not active ("Enqueuing while inactive raises RuntimeError").
   - Unit tests in the same file.
-- [ ] T017 [P] Implement `crates/ferrocade/src/window.rs`.
+- [X] T017 [P] Implement `crates/ferrocade/src/window.rs`.
   - **`WindowConfig { width: u32, height: u32, title: String, update_rate: f64, filter: Filter }`**, with `validate()`: "width/height must be > 0", "update_rate must be > 0", otherwise `Error::InvalidArgument`.
   - **`WindowState` (`Arc<Mutex<…>>`)** holds the logical width and height. They update on resize, and while minimized "the last non-zero size is kept".
   - **`pub trait GameCallbacks { type Error; fn update(&mut self, dt: f64) -> Result<(), Self::Error>; fn draw(&mut self) -> Result<(), Self::Error>; fn check_interrupt(&mut self) -> Result<(), Self::Error>; }`**
   - **`pub enum RunError<E> { Callback(E), Engine(Error) }`**
-- [ ] T018 [P] Implement `crates/ferrocade-py/src/errors.rs`: `fn to_pyerr(e: ferrocade::Error) -> PyErr`.
+- [X] T018 [P] Implement `crates/ferrocade-py/src/errors.rs`: `fn to_pyerr(e: ferrocade::Error) -> PyErr`.
   - `NotFound` maps to `PyFileNotFoundError` (the message includes the path).
   - `Decode` / `Unsupported` / `InvalidArgument` map to `PyValueError` (the message includes the path and the reason where applicable).
   - `NotInFrame` / `EventLoop` / `Gpu` map to `PyRuntimeError`.
   - `Io` maps to `PyOSError`.
-- [ ] T019 [P] Implement `crates/ferrocade-py/src/py_filter.rs`.
+- [X] T019 [P] Implement `crates/ferrocade-py/src/py_filter.rs`.
   - A `#[pyclass(eq, frozen, name = "Filter")] enum PyFilter { NEAREST, LINEAR }`, with conversion to and from `ferrocade::texture::Filter`.
   - Register it in `lib.rs` and add the module attributes `NEAREST` and `LINEAR`.
   - Export `Filter`, `NEAREST`, `LINEAR` from `python/ferrocade/__init__.py`, and add them to `python/ferrocade/_ferrocade.pyi`.
