@@ -69,8 +69,10 @@ balls.collisions() -> list[tuple[Sprite, Sprite]]            # pairs within one 
 - **Two box classes (owner decision):** `BoxCollider` rotates with the sprite; `AABBCollider`
   never rotates (for example, an upright hit box on a spinning coin). A `BoxCollider` whose sprite
   angle is a multiple of 90° uses the fast axis-aligned test internally.
-- Collider `offset=(x, y)` positions a shape relative to the sprite center (*Proposed*: it rotates
-  with the sprite for `BoxCollider` and `CircleCollider`, and doesn't for `AABBCollider`).
+- **Offsets (owner decision):** a collider's `offset=(x, y)` positions it relative to the sprite
+  center and **rotates with the sprite** for `CircleCollider` and `BoxCollider` (a hit box on a
+  ship's nose stays on the nose). `AABBCollider` never rotates, so its offset doesn't either. Offsets
+  scale with the sprite, like sizes.
 
 ## 4. Open questions for the Phase 5 spec
 

@@ -460,7 +460,7 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 
 ### Decided architecture (2026-10-12)
 1. **Colliders are separate entities** (Unity/Godot style), attached to sprites and following their transform; not a built-in property of `Sprite`. They're **attached explicitly** (no automatic colliders, even on shape sprites). Colliders without a sprite are in the backlog.
-2. **Shapes:** start with **circle, axis-aligned box, and rotated box**, as `CircleCollider`, `AABBCollider` (never rotates), and `BoxCollider` (rotates with the sprite). **Collider scale is coupled** to `sprite.scale` (sizes are in unscaled sprite pixels, as in Unity, Godot, and Arcade). The design must stay expandable (shape enum + pair tests, with a generic convex fallback) so convex polygons, auto hit boxes from texture alpha, capsules, and pixel masks can be added later.
+2. **Shapes:** start with **circle, axis-aligned box, and rotated box**, as `CircleCollider`, `AABBCollider` (never rotates), and `BoxCollider` (rotates with the sprite). **Collider scale is coupled** to `sprite.scale` (sizes are in unscaled sprite pixels, as in Unity, Godot, and Arcade). Collider **offsets** scale too, and rotate with the sprite for `CircleCollider` and `BoxCollider` (not for `AABBCollider`). The design must stay expandable (shape enum + pair tests, with a generic convex fallback) so convex polygons, auto hit boxes from texture alpha, capsules, and pixel masks can be added later.
 3. **What is checked:** **list-based queries** (Arcade style). Declared pairs checked automatically every frame are in the backlog.
 4. **Results to Python:** **batched queries** first. Enter/exit events and built-in Rust responses (bounce/stop/solid) are ideas for the showcase, not committed.
 5. **Broad phase:** a **spatial hash grid per list**, rebuilt only when the list's positions changed (reusing dirty tracking); very small lists test every pair.
@@ -630,6 +630,7 @@ ferrocade/                 # repo root
 | 2026-10-12 | Collision architecture: separate collider entities; circle, axis-aligned box, rotated box first (expandable); list-based queries; batched query results first; spatial hash grid per list; written from scratch | Owner decisions on §11 questions 1–6; `docs/design/collision.md`. Declared pairs → backlog; enter/exit events and built-in responses → showcase ideas |
 | 2026-10-12 | Colliders are attached explicitly (no automatic colliders); colliders without a sprite go to the backlog | Owner answers to the collision open questions 1–2; `docs/design/collision.md` |
 | 2026-10-12 | Collider scale is coupled to `sprite.scale`; two box classes: `BoxCollider` (rotates) and `AABBCollider` (never rotates; name chosen by the owner) | Owner decisions; matches Unity/Godot/Arcade scaling; `docs/design/collision.md` |
+| 2026-10-12 | Collider offsets rotate with the sprite (`CircleCollider`, `BoxCollider`); `AABBCollider` offsets don't rotate | Owner accepted the proposal; `docs/design/collision.md` |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
 | 2026-10-12 | Collision detection implemented in Rust | Design open (§11) |
 | 2026-10-12 | winit for windowing | Confirmed |
