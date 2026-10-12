@@ -1,0 +1,17 @@
+[package]
+name = "ferrocade-py"
+description = "Python bindings for the Ferrocade engine"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+name = "_ferrocade"
+crate-type = ["cdylib"]
+
+[dependencies]
+ferrocade.workspace = true
+pyo3 = { workspace = true, features = ["abi3-py313"] }
+env_logger.workspace = true
+log.workspace = true

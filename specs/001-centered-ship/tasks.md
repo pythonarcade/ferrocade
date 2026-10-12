@@ -38,30 +38,30 @@ These follow plan.md "Project Structure":
 
 **Purpose**: the workspace builds, the extension module imports, and the riskiest binding question (R4) is answered first.
 
-- [ ] T001 Create the root Cargo workspace in `Cargo.toml`.
+- [X] T001 Create the root Cargo workspace in `Cargo.toml`.
   - Settings: `members = ["crates/ferrocade", "crates/ferrocade-py"]`, `resolver = "3"`, edition 2024.
   - `[workspace.dependencies]` pins the versions from research.md R1: wgpu 30, winit 0.30, pyo3 0.29, image 0.25 (`default-features = false`, features `png`, `jpeg`, `bmp`, `gif`), web-time 1.1, bytemuck 1.25 (feature `derive`), pollster 1.0, slotmap 1.1, smallvec 1, thiserror 2.0, log 0.4, env_logger 0.11.
   - Add `[profile.dev.package."*"] opt-level = 2`, so image decoding and wgpu are usable in debug builds.
-- [ ] T002 [P] Create `crates/ferrocade/Cargo.toml` (workspace deps, **no pyo3**) and `crates/ferrocade/src/lib.rs`.
+- [X] T002 [P] Create `crates/ferrocade/Cargo.toml` (workspace deps, **no pyo3**) and `crates/ferrocade/src/lib.rs`.
   - `lib.rs` declares the modules `error`, `assets`, `texture`, `store`, `instance`, `frame`, `timestep`, `color`, `window`, `render`, `platform`, with empty files for each per the plan.md tree.
-- [ ] T003 [P] Create `crates/ferrocade-py/Cargo.toml` and `crates/ferrocade-py/src/lib.rs`.
+- [X] T003 [P] Create `crates/ferrocade-py/Cargo.toml` and `crates/ferrocade-py/src/lib.rs`.
   - Cargo settings: `crate-type = ["cdylib"]`, `name = "_ferrocade"`, pyo3 with features `abi3-py313`, a path dependency on `ferrocade`.
   - `lib.rs`: a `#[pymodule] fn _ferrocade` that sets `__version__` from `CARGO_PKG_VERSION` and calls `env_logger::try_init()` (so `RUST_LOG` works).
-- [ ] T004 [P] Create the root `pyproject.toml` (maturin backend per research.md R12).
+- [X] T004 [P] Create the root `pyproject.toml` (maturin backend per research.md R12).
   - `[project] name = "ferrocade"`, `requires-python = ">=3.13"`, `dynamic = ["version"]`.
   - `[tool.maturin] manifest-path = "crates/ferrocade-py/Cargo.toml"`, `python-source = "python"`, `module-name = "ferrocade._ferrocade"`, `features = ["pyo3/extension-module"]`.
   - `[tool.pytest.ini_options] testpaths = ["tests"]`, and register the marker `display`.
-- [ ] T005 [P] Create the Python package skeleton: `python/ferrocade/__init__.py` (imports `__version__` from `._ferrocade`), an empty `python/ferrocade/py.typed`, and `python/ferrocade/_ferrocade.pyi` (with only `__version__: str` for now).
-- [ ] T006 Create the dev environment and confirm the build.
+- [X] T005 [P] Create the Python package skeleton: `python/ferrocade/__init__.py` (imports `__version__` from `._ferrocade`), an empty `python/ferrocade/py.typed`, and `python/ferrocade/_ferrocade.pyi` (with only `__version__: str` for now).
+- [X] T006 Create the dev environment and confirm the build.
   - Commands: `uv venv`, `.venv\Scripts\Activate.ps1`, `uv pip install maturin pytest`, `maturin develop`.
   - Verify that `python -c "import ferrocade as fc; print(fc.__version__)"` prints `0.1.0`. Fix any build issue before continuing.
-- [ ] T007 **R4 verification spike.** In `crates/ferrocade-py/src/lib.rs`, add a temporary `#[pyclass(subclass)] _InitProbe`.
+- [X] T007 **R4 verification spike.** In `crates/ferrocade-py/src/lib.rs`, add a temporary `#[pyclass(subclass)] _InitProbe`.
   - Its `#[new]` takes `#[pyo3(signature = (*args, **kwargs))]` and creates default state. Its Rust `__init__(width: u32, height: u32, *, filter: &str)` stores the values. It has a getter `width`.
   - Add `tests/test_init_probe.py`. It defines `class G(_InitProbe): def __init__(self): super().__init__(800, 600, filter="x")`, asserts `G().width == 800`, and asserts that a subclass calling `super().__init__(800, 600)` raises `TypeError` (missing `filter`).
   - **If it passes under abi3:** record "R4 confirmed: native `__init__`" in `specs/001-centered-ship/research.md` R4.
   - **If not:** record that the fallback is used (pure-Python subclasses in `python/ferrocade/` with `__init__` calling a native `_init`), and apply the fallback in T024/T040.
   - Then delete `_InitProbe` and `tests/test_init_probe.py`.
-- [ ] T008 [P] Create `tests/conftest.py`. Register the `display` marker, and skip `@pytest.mark.display` tests when the env var `FERROCADE_HEADLESS=1` is set.
+- [X] T008 [P] Create `tests/conftest.py`. Register the `display` marker, and skip `@pytest.mark.display` tests when the env var `FERROCADE_HEADLESS=1` is set.
 
 **Checkpoint**: `maturin develop` works, and the subclassing approach is confirmed.
 
@@ -73,7 +73,7 @@ These follow plan.md "Project Structure":
 
 **⚠️ No user story work starts until this phase is complete.**
 
-- [ ] T009 [P] Implement `crates/ferrocade/src/error.rs` with a `thiserror` enum `Error`.
+- [X] T009 [P] Implement `crates/ferrocade/src/error.rs` with a `thiserror` enum `Error`.
   - Variants: `NotFound { path }`, `Io { path, source }`, `Decode { path, reason }`, `Unsupported { path, reason }`, `NotInFrame { op: &'static str }` (message: `"{op}() can only be called inside on_draw()"`), `InvalidArgument(String)`, `Gpu(String)`, `EventLoop(String)`.
   - Add `pub type Result<T> = std::result::Result<T, Error>`.
 - [ ] T010 [P] Implement the asset loader in `crates/ferrocade/src/assets.rs`.

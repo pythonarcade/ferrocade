@@ -69,6 +69,8 @@ Each section resolves one Technical Context unknown or design question.
 - **Verify early (first implementation task)** that `__init__` works under `abi3-py313`. The PyO3 guide's `__init__` example is gated on non-limited-API builds, but that gate relates to subclassing `PyDict`, not to `__init__` itself.
 - **Fallback if it doesn't work:** thin pure-Python subclasses in `python/ferrocade/` define `__init__` and call a native `_init(...)`. Property access stays native either way.
 
+**Outcome (T007, 2026-10-12)**: **confirmed.** With PyO3 0.29 and `abi3-py313`, a native `__init__` on a `#[pyclass(subclass)]` (with `#[new]` accepting `*args, **kwargs`) works with a Python subclass calling `super().__init__(800, 600, filter=...)`. A missing required keyword raises `TypeError`. The fallback isn't needed.
+
 **Rationale**: users subclass `Window` now and will subclass `Sprite` later (e.g. `class Player(fc.Sprite)`).
 
 **Alternatives considered**: making `Window` purely Python. Rejected because it adds an indirection layer for every callback, with no benefit.
