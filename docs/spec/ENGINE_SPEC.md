@@ -71,16 +71,16 @@ We compared the class structure of other engines:
 
 #### `Window`
 - Opens an OS window with a wgpu surface and owns the main loop.
-- Constructor: `Window(width, height, title, update_rate=1/60)`
-- Properties: `width`, `height`
+- Constructor: `Window(width, height, title, *, filter, update_rate=1/60)`. `filter` is **required** (see "Texture filtering" below).
+- Properties: `width`, `height`, `filter`
 - Methods: `run()` (blocks and runs the event loop), `clear(color=...)`
 - Overridable callbacks: `on_draw()` (once per displayed frame), `on_update(delta_time)` (fixed rate; `delta_time` == `update_rate`)
 - Rust side: winit event loop, wgpu device/queue/surface, frame presentation.
 
 #### `Texture`
 - An image loaded onto the GPU, shareable between any number of sprites.
-- Constructor: `Texture(path)`. Loading goes through a cache keyed by path, so loading the same file twice returns the same GPU texture.
-- Properties (read-only): `width`, `height` (in pixels), `path`
+- Constructor: `Texture(path, *, filter=None)`. Loading goes through a cache keyed by path, so loading the same file twice shares the same image data. `filter` optionally overrides the window's filter for this texture.
+- Properties (read-only): `width`, `height` (in pixels), `path`, `filter`
 - Rust side: decodes the image (`image` crate), uploads it to a wgpu texture, and creates a sampler and bind group. The cache holds reference-counted handles.
 - **Lazy GPU upload:** a `Texture` can be created before the `Window` exists. The file is decoded right away, and the GPU upload happens on first use once a wgpu device is available.
 
@@ -105,6 +105,13 @@ We compared the class structure of other engines:
 - **Later, real work:** animated GIF/WebP (needs the animation system), compressed GPU formats (KTX2/DDS/Basis), and SVG (needs a vector rasterizer such as `resvg`).
 - Unsupported or corrupt files raise a clear Python exception naming the file and format.
 
+### Texture filtering (decided): no default
+- The choice between **nearest** (crisp pixels, for pixel art) and **linear** (smooth, for scaled or rotated or photographic art) depends on the game, and this question comes up repeatedly. **The engine has no default.**
+- **`Window(..., filter=fc.NEAREST | fc.LINEAR)` is a required keyword argument.** Leaving it out is a `TypeError`. It applies to every texture without an override.
+- **Per-texture override:** `Texture(path, filter=fc.LINEAR)`. `None` (the default for `Texture`) means "use the window's filter".
+- The filter is a sampler choice, not part of the image data, so overriding it never reloads the file.
+- Design details: `specs/001-centered-ship/research.md` R11.
+
 ### Coordinate system (decided)
 - The origin `(0, 0)` is the **bottom-left** corner of the window, with **y going up** (same as Arcade and OpenGL).
 - Units are pixels. `center_x`/`center_y` give the sprite's center point.
@@ -121,7 +128,7 @@ import ferrocade as fc
 
 class Game(fc.Window):
     def __init__(self):
-        super().__init__(800, 600, "Ferrocade")
+        super().__init__(800, 600, "Ferrocade", filter=fc.NEAREST)
         self.sprites = fc.SpriteList()
         ship_texture = fc.Texture("ship.png")
         ship = fc.Sprite(ship_texture, center_x=self.width / 2, center_y=self.height / 2)
@@ -468,6 +475,7 @@ ferrocade/                 # repo root
 | 2026-10-12 | Repository layout (§13); crates `ferrocade` + `ferrocade-py` | Spec moved to `docs/spec/` |
 | 2026-10-12 | Adopt Spec Kit; one feature spec per roadmap phase | §13 "Spec Kit workflow" |
 | 2026-10-12 | Minimum Python 3.13, stable ABI (`abi3-py313`) | Owner: no backward-compat need; don't go newer without a benefit. §6 |
+| 2026-10-12 | Texture filtering: no default; `filter=` required on `Window`, optional override on `Texture` | Recurring issue; Phase 1 example uses `NEAREST` |
 | 2026-10-12 | Phase 1 spec (`specs/001-centered-ship`) defaults confirmed | Logical pixels, no re-center on resize, callback exceptions propagate |
 | 2026-10-12 | Constitution v1.0.0 ratified (draft, pending owner review) | Six principles drawn from confirmed decisions |
 | 2026-10-12 | Python-only public API, Rust backend | Users never write Rust |

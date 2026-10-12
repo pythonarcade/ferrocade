@@ -12,7 +12,7 @@ import ferrocade as fc
 
 class Game(fc.Window):
     def __init__(self):
-        super().__init__(800, 600, "Ferrocade")
+        super().__init__(800, 600, "Ferrocade", filter=fc.NEAREST)
         self.sprites = fc.SpriteList()
         self.sprites.append(fc.Sprite("assets/images/ship.png", center_x=400, center_y=300))
 

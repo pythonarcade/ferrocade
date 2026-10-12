@@ -72,6 +72,8 @@ appears centered, at its natural size, with correct transparency.
    created from an explicitly loaded image.
 4. **Given** a sprite positioned at (0, 0), **When** drawn, **Then** its center is at
    the bottom-left corner of the window (bottom-left origin, y up).
+5. **Given** a window created with nearest filtering (as in the Phase 1 example),
+   **When** the ship is drawn, **Then** its pixel edges are crisp (not blurred).
 
 ---
 
@@ -121,6 +123,9 @@ only once, and the moved sprite shows at its new location on the next frame.
 - **Error inside a developer callback:** an exception raised in the draw or update
   callback stops the window and propagates to the developer's script with its normal
   Python traceback. It is not silently swallowed.
+- **No filtering choice:** creating a window without choosing a filter mode fails
+  immediately, with an error saying that a filter mode is required. There is no
+  silent default.
 - **Empty sprite list:** drawing a list with no sprites does nothing and raises no error.
 - **Removing a sprite:** a sprite removed from a list no longer appears on the next frame.
 - **Display scaling:** on displays with OS scaling (e.g. 150%), window size and sprite
@@ -191,12 +196,23 @@ only once, and the moved sprite shows at its new location on the next frame.
 - **FR-021**: The public Python API MUST include type information so that editors can
   offer autocompletion for the window, image, sprite, and sprite list types.
 
+**Image filtering**
+
+- **FR-022**: Developers MUST choose an image filtering mode, either **nearest** (crisp
+  pixels) or **linear** (smooth), when creating a window. There is no default, and
+  leaving it out is an error. The chosen mode applies to every image that doesn't
+  override it.
+- **FR-023**: Developers MUST be able to override the filtering mode for an individual
+  image when loading it. Overriding the filter MUST NOT cause the image file to be read
+  again.
+
 ### Key Entities *(include if feature involves data)*
 
 - **Window**: the game's on-screen canvas and the owner of the game loop. Attributes:
-  size, title, update rate. Behaviors: draw and update callbacks, clear, run.
+  size, title, update rate, filtering mode (required). Behaviors: draw and update callbacks, clear, run.
 - **Texture (image)**: a loaded picture that is shared and reusable. Attributes: pixel
-  width, height, source path. One texture per distinct file path.
+  width, height, source path, optional filtering override. The pixel data is loaded once
+  per distinct file path.
 - **Sprite**: something placed on screen. Attributes: texture, center position, scale,
   derived width and height. It references exactly one texture, and many sprites can
   share one texture.

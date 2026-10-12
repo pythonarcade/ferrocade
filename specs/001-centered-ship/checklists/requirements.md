@@ -43,4 +43,6 @@
   scaling, no re-centering on resize, exceptions propagate out of callbacks, relative
   paths resolved from the working directory. Override them with `/speckit-clarify` if
   desired.
+- Added during planning (owner, 2026-10-12): FR-022/FR-023, a required filter mode at the
+  window plus a per-image override (no default). The checklist still passes.
 - Owner confirmed all defaults (2026-10-12). Minimum Python version set to 3.13 (engine spec §6).
