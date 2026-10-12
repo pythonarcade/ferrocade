@@ -503,6 +503,7 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 - [ ] Audio library
 - [ ] NumPy zero-copy views on `SpriteList` (see §7)
 - [ ] Physics response (after the collision system, §11)
+- [ ] Angle-to-velocity helper: set a sprite's velocity from a heading (degrees, counter-clockwise) and a speed, so users rarely need `math.radians`/`cos`/`sin` (e.g. something like `sprite.set_velocity_from_angle(angle, speed)`; the exact API is TBD)
 - [ ] Shapes/primitives drawing
 - [ ] Build/packaging/distribution (wheels via maturin)
 - [ ] Testing strategy (headless wgpu rendering tests)
@@ -582,6 +583,7 @@ ferrocade/                 # repo root
 | 2026-10-12 | Circle edges follow the window filter, with a per-circle `filter=` override | Consistent with "no hidden default filter" |
 | 2026-10-12 | Add a performance showcase milestone after Phase 5: walls plus many bouncing sprites, showing render, move, and collision speed | Owner request; collision response and timing display to be decided (§10) |
 | 2026-10-12 | Built-in shape atlas is mipmapped (6 levels) and the disc is kept clear of the white half | Needed so `LINEAR` circles stay smooth when drawn small; found by Phase 1c tests |
+| 2026-10-12 | Angles and angular velocity stay in degrees (deg, deg/s); an angle-to-velocity helper goes in the backlog | Owner confirmed degrees over radians |
 | 2026-10-12 | Rotation: a positive angle is counter-clockwise (math convention) | Chosen for mathematical consistency with y-up; differs from Arcade 3.x |
 | 2026-10-12 | Collision direction: Rust does movement and detection, Python manages collisions (game logic) | Owner direction; delivery mechanism Proposed (§11 Q6: built-in Rust responses plus batched enter/exit events plus queries) |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
