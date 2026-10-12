@@ -420,11 +420,13 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 ## 13. Repository Layout
 
 ```
-ferrocade/                 # repo root (local folder is currently `pyrustarcade/`)
+ferrocade/                 # repo root
 ├─ README.md               # project overview
-├─ CLAUDE.md               # instructions for AI coding assistants (read automatically by Claude Code)
-├─ .claude/                # Claude Code project settings/commands
-├─ .gitignore
+├─ CLAUDE.md               # instructions for AI coding assistants (imports the constitution)
+├─ .claude/skills/         # Spec Kit skills for Claude Code (speckit-specify, -plan, -tasks, ...)
+├─ .specify/               # Spec Kit: constitution (memory/), templates, scripts
+├─ .gitignore, .gitattributes
+├─ specs/                  # Spec Kit feature specs, one per roadmap phase: 001-centered-ship/, ...
 ├─ docs/
 │  ├─ spec/ENGINE_SPEC.md  # this document: living spec + decision log
 │  ├─ design/              # in-depth subsystem designs (e.g. collision.md)
@@ -445,6 +447,12 @@ ferrocade/                 # repo root (local folder is currently `pyrustarcade/
 - Phase 1 adds a root `Cargo.toml` (Cargo workspace over `crates/*`) and `pyproject.toml` (maturin config pointing at `crates/ferrocade-py`, with `python/` as the Python source dir).
 - The spec stays a single document. When a subsystem design grows large, move the details to `docs/design/` and leave a summary plus link here.
 
+### Spec Kit workflow
+- The project uses [Spec Kit](https://github.com/github/spec-kit) (`specify` CLI) for per-phase work.
+- **Constitution** (`.specify/memory/constitution.md`): the non-negotiable principles drawn from this spec's decisions. `CLAUDE.md` imports it, so AI assistants always see it.
+- **Feature specs** (`specs/NNN-<name>/`): one per roadmap phase (§10), each with `spec.md`, `plan.md`, and `tasks.md`. Flow: `/speckit-specify` → `/speckit-clarify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement`.
+- **Division of roles:** this document holds engine-wide architecture and the decision log. Feature specs hold phase-specific requirements and tasks, and reference this document instead of copying it.
+
 ---
 
 ## Decision Log
@@ -453,6 +461,8 @@ ferrocade/                 # repo root (local folder is currently `pyrustarcade/
 |---|---|---|
 | 2026-10-12 | Working name: **Ferrocade** (`import ferrocade as fc`) | Can change later |
 | 2026-10-12 | Repository layout (§13); crates `ferrocade` + `ferrocade-py` | Spec moved to `docs/spec/` |
+| 2026-10-12 | Adopt Spec Kit; one feature spec per roadmap phase | §13 "Spec Kit workflow" |
+| 2026-10-12 | Constitution v1.0.0 ratified (draft, pending owner review) | Six principles drawn from confirmed decisions |
 | 2026-10-12 | Python-only public API, Rust backend | Users never write Rust |
 | 2026-10-12 | wgpu for rendering | Native standalone, multi-backend, optional web |
 | 2026-10-12 | v1 classes: `Window`, `Sprite`, `SpriteList` | Arcade-style. `SpriteList` = GPU batch |
