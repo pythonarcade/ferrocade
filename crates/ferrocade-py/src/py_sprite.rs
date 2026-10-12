@@ -165,6 +165,52 @@ impl PySprite {
         store.set_texture(id, value.texture_ref()).py()
     }
 
+    /// Horizontal velocity in pixels per second (applied by `SpriteList.update`).
+    #[getter]
+    fn velocity_x(&self) -> PyResult<f64> {
+        self.read(|s| s.velocity_x)
+    }
+
+    #[setter]
+    fn set_velocity_x(&self, value: f64) -> PyResult<()> {
+        store::global().set_velocity_x(self.id()?, value).py()
+    }
+
+    /// Vertical velocity in pixels per second (+y is up).
+    #[getter]
+    fn velocity_y(&self) -> PyResult<f64> {
+        self.read(|s| s.velocity_y)
+    }
+
+    #[setter]
+    fn set_velocity_y(&self, value: f64) -> PyResult<()> {
+        store::global().set_velocity_y(self.id()?, value).py()
+    }
+
+    /// `(velocity_x, velocity_y)`; setting it updates both in one call.
+    #[getter]
+    fn velocity(&self) -> PyResult<(f64, f64)> {
+        self.read(|s| (s.velocity_x, s.velocity_y))
+    }
+
+    #[setter]
+    fn set_velocity(&self, value: (f64, f64)) -> PyResult<()> {
+        store::global()
+            .set_velocity(self.id()?, value.0, value.1)
+            .py()
+    }
+
+    /// Rotation speed in degrees per second (positive is counter-clockwise).
+    #[getter]
+    fn angular_velocity(&self) -> PyResult<f64> {
+        self.read(|s| s.angular_velocity)
+    }
+
+    #[setter]
+    fn set_angular_velocity(&self, value: f64) -> PyResult<()> {
+        store::global().set_angular_velocity(self.id()?, value).py()
+    }
+
     /// Tint as (r, g, b, a), 0-255. White (the default) draws the texture unchanged.
     #[getter]
     fn color(&self) -> PyResult<(u8, u8, u8, u8)> {

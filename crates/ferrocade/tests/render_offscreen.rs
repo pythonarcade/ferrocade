@@ -454,3 +454,93 @@ fn tint_colors_image_and_white_restores_it() {
     store.set_color(ship_id, [255, 255, 255, 255]).unwrap();
     assert_eq!(draw(&mut renderer, &mut store, list), original);
 }
+
+// --- Phase 2: rotation ---
+
+fn bbox_size(pixels: &[u8]) -> (u32, u32, f64, f64) {
+    let (x0, y0, x1, y1) = bounding_box(pixels).expect("nothing drawn");
+    (
+        x1 - x0 + 1,
+        y1 - y0 + 1,
+        (x0 + x1 + 1) as f64 / 2.0,
+        (y0 + y1 + 1) as f64 / 2.0,
+    )
+}
+
+#[test]
+fn rotation_90_swaps_width_and_height() {
+    let Some(mut renderer) = renderer() else {
+        return;
+    };
+    let mut store = SpriteStore::new();
+    let list = store.create_list();
+    let r = store
+        .create_rectangle(60.0, 20.0, RED, 400.0, 300.0)
+        .unwrap();
+    store.set_angle(r, 90.0).unwrap();
+    store.append(list, r).unwrap();
+    let (w, h, cx, cy) = bbox_size(&draw(&mut renderer, &mut store, list));
+    assert!(w.abs_diff(20) <= 1 && h.abs_diff(60) <= 1, "size {w}x{h}");
+    assert!(
+        (cx - 400.0).abs() <= 1.0 && (cy - 300.0).abs() <= 1.0,
+        "center {cx},{cy}"
+    );
+}
+
+#[test]
+fn rotation_45_square_grows_bounding_box() {
+    let Some(mut renderer) = renderer() else {
+        return;
+    };
+    let mut store = SpriteStore::new();
+    let list = store.create_list();
+    let r = store
+        .create_rectangle(40.0, 40.0, RED, 400.0, 300.0)
+        .unwrap();
+    store.set_angle(r, 45.0).unwrap();
+    store.append(list, r).unwrap();
+    let (w, h, _, _) = bbox_size(&draw(&mut renderer, &mut store, list));
+    // 40 * sqrt(2) = 56.6
+    assert!(w.abs_diff(57) <= 2 && h.abs_diff(57) <= 2, "size {w}x{h}");
+}
+
+#[test]
+fn positive_angle_rotates_counter_clockwise() {
+    let Some(mut renderer) = renderer() else {
+        return;
+    };
+    // Two-tone image: left half blue, right half red (the red half points along +x).
+    let dir = std::env::temp_dir().join(format!("ferrocade-rot-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("two_tone.png");
+    let mut img = image::RgbaImage::new(20, 10);
+    for (x, _, px) in img.enumerate_pixels_mut() {
+        *px = if x < 10 {
+            image::Rgba([0, 0, 255, 255])
+        } else {
+            image::Rgba([255, 0, 0, 255])
+        };
+    }
+    img.save(&path).unwrap();
+    let tex = TextureRef {
+        data: texture::load(&path).unwrap(),
+        filter: None,
+    };
+    let mut store = SpriteStore::new();
+    let list = store.create_list();
+    let s = store.create_sprite(tex, 400.0, 300.0, 4.0).unwrap();
+    store.set_angle(s, 90.0).unwrap();
+    store.append(list, s).unwrap();
+    let pixels = draw(&mut renderer, &mut store, list);
+    // Counter-clockwise by 90 degrees: +x (red) now points along +y (up).
+    assert_eq!(
+        pixel(&pixels, 400, 330),
+        [255, 0, 0],
+        "red should be above center"
+    );
+    assert_eq!(
+        pixel(&pixels, 400, 270),
+        [0, 0, 255],
+        "blue should be below center"
+    );
+}

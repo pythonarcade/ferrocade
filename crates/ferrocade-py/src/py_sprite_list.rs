@@ -45,6 +45,11 @@ impl PySpriteList {
         Ok(())
     }
 
+    /// Move every sprite by its velocities over `delta_time` seconds (one engine call).
+    fn update(&self, delta_time: f64) -> PyResult<()> {
+        store::global().update_list(self.id, delta_time).py()
+    }
+
     /// Draw every sprite, in order. Only valid inside `on_draw()`.
     fn draw(&self) -> PyResult<()> {
         frame::push(FrameCommand::DrawList(self.id), "draw").py()

@@ -236,6 +236,33 @@ impl Engine {
         Ok((self.sprites.len() - 1) as u32)
     }
 
+    /// `[velocity_x, velocity_y, angular_velocity]` of a sprite.
+    pub fn get_velocity(&self, sprite: u32) -> Result<Vec<f64>, JsError> {
+        let id = self.sprite(sprite)?;
+        let store = store::global();
+        let s = store.sprite(id).map_err(js_err)?;
+        Ok(vec![s.velocity_x, s.velocity_y, s.angular_velocity])
+    }
+
+    pub fn set_velocity(&self, sprite: u32, vx: f64, vy: f64) -> Result<(), JsError> {
+        store::global()
+            .set_velocity(self.sprite(sprite)?, vx, vy)
+            .map_err(js_err)
+    }
+
+    pub fn set_angular_velocity(&self, sprite: u32, value: f64) -> Result<(), JsError> {
+        store::global()
+            .set_angular_velocity(self.sprite(sprite)?, value)
+            .map_err(js_err)
+    }
+
+    /// Move every sprite in a list by its velocities over `dt` seconds.
+    pub fn update_list(&self, list: u32, dt: f64) -> Result<(), JsError> {
+        store::global()
+            .update_list(self.list(list)?, dt)
+            .map_err(js_err)
+    }
+
     /// `[r, g, b, a]` tint of a sprite.
     pub fn get_color(&self, sprite: u32) -> Result<Vec<u8>, JsError> {
         let id = self.sprite(sprite)?;

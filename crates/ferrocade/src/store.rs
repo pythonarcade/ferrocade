@@ -32,6 +32,11 @@ pub struct SpriteState {
     pub texture: TextureRef,
     /// Tint, RGBA 0-255 (sRGB). White leaves the texture unchanged.
     pub color: [u8; 4],
+    /// Pixels per second, applied by `update_list`.
+    pub velocity_x: f64,
+    pub velocity_y: f64,
+    /// Degrees per second (positive is counter-clockwise), applied by `update_list`.
+    pub angular_velocity: f64,
     /// Own size for shape sprites; `None` means "use the texture's size".
     pub base_size: Option<(f64, f64)>,
     /// Texture region to draw (u0, v0, u1, v1).
@@ -149,6 +154,9 @@ impl SpriteStore {
             angle: 0.0,
             texture,
             color: WHITE,
+            velocity_x: 0.0,
+            velocity_y: 0.0,
+            angular_velocity: 0.0,
             base_size: None,
             uv_rect: [0.0, 0.0, 1.0, 1.0],
             memberships: SmallVec::new(),
@@ -371,6 +379,67 @@ impl SpriteStore {
     pub fn set_angle(&mut self, id: SpriteId, value: f64) -> Result<()> {
         let value = check_finite("angle", value)?;
         self.update(id, |s| s.angle = value)
+    }
+
+    // Velocities aren't drawn, so setting them doesn't touch instances or dirty ranges.
+
+    pub fn set_velocity_x(&mut self, id: SpriteId, value: f64) -> Result<()> {
+        let value = check_finite("velocity_x", value)?;
+        self.sprite_mut(id)?.velocity_x = value;
+        Ok(())
+    }
+
+    pub fn set_velocity_y(&mut self, id: SpriteId, value: f64) -> Result<()> {
+        let value = check_finite("velocity_y", value)?;
+        self.sprite_mut(id)?.velocity_y = value;
+        Ok(())
+    }
+
+    pub fn set_velocity(&mut self, id: SpriteId, vx: f64, vy: f64) -> Result<()> {
+        let vx = check_finite("velocity_x", vx)?;
+        let vy = check_finite("velocity_y", vy)?;
+        let sprite = self.sprite_mut(id)?;
+        sprite.velocity_x = vx;
+        sprite.velocity_y = vy;
+        Ok(())
+    }
+
+    pub fn set_angular_velocity(&mut self, id: SpriteId, value: f64) -> Result<()> {
+        let value = check_finite("angular_velocity", value)?;
+        self.sprite_mut(id)?.angular_velocity = value;
+        Ok(())
+    }
+
+    /// Advance every moving sprite in `list` by its velocities over `dt` seconds.
+    ///
+    /// Sprites with zero velocity are skipped, so they cost nothing to redraw. A moving
+    /// sprite's instance is rewritten in every list that contains it.
+    pub fn update_list(&mut self, list: ListId, dt: f64) -> Result<()> {
+        if !(dt.is_finite() && dt >= 0.0) {
+            return Err(Error::InvalidArgument(format!(
+                "delta_time must be a finite number >= 0, got {dt}"
+            )));
+        }
+        let members = self.list(list)?.sprites.clone();
+        for id in members {
+            let s = &self.sprites[id];
+            if s.velocity_x == 0.0 && s.velocity_y == 0.0 && s.angular_velocity == 0.0 {
+                continue;
+            }
+            let (vx, vy, va) = (s.velocity_x, s.velocity_y, s.angular_velocity);
+            self.update(id, |s| {
+                s.center_x += vx * dt;
+                s.center_y += vy * dt;
+                s.angle += va * dt;
+            })?;
+        }
+        Ok(())
+    }
+
+    fn sprite_mut(&mut self, id: SpriteId) -> Result<&mut SpriteState> {
+        self.sprites
+            .get_mut(id)
+            .ok_or_else(|| Error::InvalidArgument("sprite no longer exists".into()))
     }
 
     pub fn set_color(&mut self, id: SpriteId, color: [u8; 4]) -> Result<()> {

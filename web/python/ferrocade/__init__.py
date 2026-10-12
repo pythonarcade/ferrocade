@@ -205,6 +205,43 @@ class Sprite:
     def texture(self, value):
         raise NotImplementedError("changing a sprite's texture is not available in the web spike")
 
+    def _velocity(self, index):
+        return _call(_engine.get_velocity, self._id)[index]
+
+    @property
+    def velocity_x(self):
+        return self._velocity(0)
+
+    @velocity_x.setter
+    def velocity_x(self, value):
+        _call(_engine.set_velocity, self._id, float(value), self._velocity(1))
+
+    @property
+    def velocity_y(self):
+        return self._velocity(1)
+
+    @velocity_y.setter
+    def velocity_y(self, value):
+        _call(_engine.set_velocity, self._id, self._velocity(0), float(value))
+
+    @property
+    def velocity(self):
+        v = _call(_engine.get_velocity, self._id)
+        return (v[0], v[1])
+
+    @velocity.setter
+    def velocity(self, value):
+        vx, vy = value
+        _call(_engine.set_velocity, self._id, float(vx), float(vy))
+
+    @property
+    def angular_velocity(self):
+        return self._velocity(2)
+
+    @angular_velocity.setter
+    def angular_velocity(self, value):
+        _call(_engine.set_angular_velocity, self._id, float(value))
+
     @property
     def color(self):
         return tuple(int(c) for c in _call(_engine.get_color, self._id))
@@ -316,6 +353,9 @@ class SpriteList:
     def remove(self, sprite):
         _call(_engine.remove, self._id, sprite._id)
         self._sprites.remove(sprite)
+
+    def update(self, delta_time):
+        _call(_engine.update_list, self._id, float(delta_time))
 
     def draw(self):
         _call(_engine.draw_list, self._id)

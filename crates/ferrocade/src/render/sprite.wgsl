@@ -13,7 +13,7 @@ struct VertexIn {
     @builtin(vertex_index) vertex_index: u32,
     @location(0) center: vec2<f32>,
     @location(1) size: vec2<f32>,
-    @location(2) angle: f32,     // degrees; not applied yet
+    @location(2) angle: f32,     // degrees, counter-clockwise
     @location(3) uv_rect: vec4<f32>,
     @location(4) color: vec4<f32>,  // tint, sRGB in 0..1 (from Unorm8x4)
 };
@@ -40,7 +40,15 @@ fn vs_main(in: VertexIn) -> VertexOut {
         vec2<f32>(0.0, 0.0), vec2<f32>(1.0, 1.0), vec2<f32>(0.0, 1.0),
     );
     let corner = corners[in.vertex_index];
-    let world = in.center + (corner - vec2<f32>(0.5, 0.5)) * in.size;
+    // Rotate the corner around the sprite's center. With the y-up projection, a positive
+    // angle turns counter-clockwise on screen.
+    let a = radians(in.angle);
+    let offset = (corner - vec2<f32>(0.5, 0.5)) * in.size;
+    let rotated = vec2<f32>(
+        offset.x * cos(a) - offset.y * sin(a),
+        offset.x * sin(a) + offset.y * cos(a),
+    );
+    let world = in.center + rotated;
 
     var out: VertexOut;
     out.position = globals.projection * vec4<f32>(world, 0.0, 1.0);

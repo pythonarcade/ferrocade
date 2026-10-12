@@ -97,6 +97,14 @@ class Sprite:
     """Rotation in degrees (stored; rotation is not drawn yet)."""
     texture: Texture
     """Shape sprites use a built-in texture; assigning one raises TypeError."""
+    velocity_x: float
+    """Pixels per second (+x is right). Applied by `SpriteList.update`."""
+    velocity_y: float
+    """Pixels per second (+y is up). Applied by `SpriteList.update`."""
+    velocity: tuple[float, float]
+    """`(velocity_x, velocity_y)`; setting it updates both in one call."""
+    angular_velocity: float
+    """Degrees per second; positive is counter-clockwise. Applied by `SpriteList.update`."""
     color: tuple[int, int, int, int]
     """Tint (r, g, b, a), 0-255; accepts 3- or 4-tuples. White draws the texture unchanged."""
     @property
@@ -141,6 +149,8 @@ class SpriteList:
     def __init__(self) -> None: ...
     def append(self, sprite: Sprite) -> None: ...
     def remove(self, sprite: Sprite) -> None: ...
+    def update(self, delta_time: float) -> None:
+        """Move every sprite by its velocities over `delta_time` seconds."""
     def draw(self) -> None:
         """Draw all sprites. Only valid inside `on_draw`."""
     def __len__(self) -> int: ...

@@ -11,7 +11,7 @@ pub struct Instance {
     pub center: [f32; 2],
     /// Drawn size in pixels: base size (or texture size) × |scale|.
     pub size: [f32; 2],
-    /// Degrees. Stored for later; not applied by the shader yet.
+    /// Rotation in degrees around the center; positive is counter-clockwise.
     pub angle: f32,
     /// Tint, RGBA 0-255 in sRGB (read as `Unorm8x4`; white leaves the texture unchanged).
     pub color: [u8; 4],

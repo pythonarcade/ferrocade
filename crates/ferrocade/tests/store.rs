@@ -192,3 +192,70 @@ fn set_color_updates_every_list_and_marks_dirty() {
         assert_eq!(store.list(list).unwrap().dirty(), Some(0..1));
     }
 }
+
+#[test]
+fn update_list_moves_by_velocity_times_time() {
+    let mut store = SpriteStore::new();
+    let s = store.create_sprite(ship(), 100.0, 100.0, 1.0).unwrap();
+    let list = store.create_list();
+    store.append(list, s).unwrap();
+    store.set_velocity(s, 200.0, -100.0).unwrap();
+    store.set_angular_velocity(s, 90.0).unwrap();
+    for _ in 0..60 {
+        store.update_list(list, 1.0 / 60.0).unwrap();
+    }
+    let state = store.sprite(s).unwrap();
+    assert!((state.center_x - 300.0).abs() < 1e-6, "{}", state.center_x);
+    assert!(state.center_y.abs() < 1e-6, "{}", state.center_y);
+    assert!((state.angle - 90.0).abs() < 1e-6, "{}", state.angle);
+    let center = store.list(list).unwrap().instances()[0].center;
+    assert!(
+        (center[0] - 300.0).abs() < 1e-3 && center[1].abs() < 1e-3,
+        "{center:?}"
+    );
+}
+
+#[test]
+fn update_list_skips_still_sprites_and_updates_all_memberships() {
+    let mut store = SpriteStore::new();
+    let still = store.create_sprite(ship(), 0.0, 0.0, 1.0).unwrap();
+    let moving = store.create_sprite(ship(), 0.0, 0.0, 1.0).unwrap();
+    let (a, b) = (store.create_list(), store.create_list());
+    store.append(a, still).unwrap();
+    store.append(a, moving).unwrap();
+    store.append(b, moving).unwrap();
+    store.list_mut(a).unwrap().take_dirty();
+    store.list_mut(b).unwrap().take_dirty();
+
+    store.update_list(a, 0.5).unwrap(); // nothing moves yet
+    assert_eq!(store.list(a).unwrap().dirty(), None);
+
+    store.set_velocity_x(moving, 10.0).unwrap();
+    store.update_list(a, 0.5).unwrap();
+    assert_eq!(
+        store.list(a).unwrap().dirty(),
+        Some(1..2),
+        "still sprite was dirtied"
+    );
+    assert_eq!(store.list(b).unwrap().instances()[0].center[0], 5.0);
+    assert_eq!(store.list(b).unwrap().dirty(), Some(0..1));
+}
+
+#[test]
+fn motion_input_validation() {
+    let mut store = SpriteStore::new();
+    let s = store.create_sprite(ship(), 0.0, 0.0, 1.0).unwrap();
+    let list = store.create_list();
+    for bad in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+        assert!(store.set_velocity_x(s, bad).is_err());
+        assert!(store.set_velocity_y(s, bad).is_err());
+        assert!(store.set_velocity(s, 0.0, bad).is_err());
+        assert!(store.set_angular_velocity(s, bad).is_err());
+    }
+    for bad in [f64::NAN, -1.0, f64::INFINITY] {
+        assert!(matches!(
+            store.update_list(list, bad),
+            Err(Error::InvalidArgument(_))
+        ));
+    }
+}
