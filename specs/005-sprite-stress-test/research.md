@@ -84,9 +84,8 @@ frame. The stats object lets the stress tool and the future showcase read the en
 ## R5. Comparison engines (US2, owner decision)
 
 **Decision**:
-- **Python Arcade 3.3.3** (GPU-batched `SpriteList`; it has a Python 3.14 wheel).
-- **Pygame:** classic `pygame` 2.6.1 has **no Python 3.14 Windows wheel**, so use **`pygame-ce`
-  2.5.8** (the community edition: the same `import pygame` API, with an actively maintained 3.14 wheel).
+- **Python Arcade 4.0 pre-release, pinned to `4.0.0.dev8`** (owner decision, 2026-10-12). It's the GPU-batched `SpriteList`, a pure-Python wheel that pins `pyglet==3.0.dev11`. Its API may differ from 3.x, so the Arcade scenes are written against 4.0 and checked against its docs and source.
+- **Pygame: `pygame-ce` 2.5.8** (owner decision, 2026-10-12): the community edition, with the same `import pygame` API. Classic `pygame` 2.6.1 also lacks a Python 3.14 Windows wheel.
 - **Installation:** both go into the **dev venv only**, via a `benches/requirements.txt`. They're
   never Ferrocade dependencies.
 - **Equivalent scenes:**

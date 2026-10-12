@@ -12,8 +12,7 @@
 - It measures **work time** (engine update, game code, draw queueing, and engine render CPU), so
   headroom shows even under vsync.
 - It finds each scene's maximum sustainable count, names the dominant cost, and writes a results
-  table, run against Ferrocade, **Arcade 3.3.3**, and **pygame-ce 2.5.8** (the Pygame column, since
-  classic pygame has no Python 3.14 wheel).
+  table, run against Ferrocade, **Arcade 4.0 pre-release (`4.0.0.dev8`)**, and **pygame-ce 2.5.8** (both chosen by the owner).
 
 **The target:** 10,000 engine-moved sprites at 60 FPS.
 
@@ -26,7 +25,7 @@
 
 **Language/Version**: Rust stable 1.99; Python 3.14 venv (≥ 3.13 supported).
 
-**Primary Dependencies**: there are no new Ferrocade dependencies. **Dev-only** benchmark dependencies: `arcade==3.3.3` and `pygame-ce==2.5.8` (in `benches/requirements.txt`).
+**Primary Dependencies**: there are no new Ferrocade dependencies. **Dev-only** benchmark dependencies: `arcade==4.0.0.dev8` (pulls `pyglet==3.0.dev11`) and `pygame-ce==2.5.8` (in `benches/requirements.txt`).
 
 **Storage**: JSON results in `benches/results/` (gitignored). The summary is committed in `docs/research/phase3-benchmarks.md`.
 
@@ -61,7 +60,7 @@ There are no NEEDS CLARIFICATION items left. The owner answered all three spec q
 | II. Minimize conversion | Bulk work in Rust, measured. | ✅ | ✅ This phase *verifies* II with numbers. Scene (b) keeps per-sprite Python work at zero (R2). |
 | III. Portable | Web parity for the API; no platform-only features. | ✅ | ✅ `show_fps` works on desktop (`set_title`) and web (`document.title`). Timing uses `web_time`. The web numbers are informational. |
 | IV. Simple first | No speculative features. | ✅ | ✅ No vsync toggle, no GPU timers, no engine bounce. Optimizations happen only if measurements demand them. |
-| V. Spec-driven decisions | Owner decisions followed; open designs untouched. | ✅ | ✅ The target and engines are as decided. The NumPy path is deferred. The collision and response design isn't pre-empted (R2). The pygame → pygame-ce substitution is reported to the owner. |
+| V. Spec-driven decisions | Owner decisions followed; open designs untouched. | ✅ | ✅ The target and engines are as decided. The NumPy path is deferred. The collision and response design isn't pre-empted (R2). Arcade 4.0 dev8 and pygame-ce were both chosen by the owner. |
 | VI. Phase-based delivery | Runnable tool plus criteria. | ✅ | ✅ `benches/stress.py`, P1–P7, and the report. |
 
 **Result**: PASS.
@@ -91,7 +90,7 @@ crates/ferrocade-py/src/py_window.rs              # show_fps property; frame_sta
 python/ferrocade/_ferrocade.pyi                   # stubs
 tests/test_window.py                              # frame_stats + show_fps tests
 crates/ferrocade-web/src/lib.rs + web/python/ferrocade/__init__.py  # stats + show_fps parity
-benches/requirements.txt                          # arcade==3.3.3, pygame-ce==2.5.8 (dev-only)
+benches/requirements.txt                          # arcade==4.0.0.dev8, pygame-ce==2.5.8 (dev-only)
 benches/stress.py                                 # ramp/search driver, table + JSON output
 benches/scenes_ferrocade.py                       # the four scenes for Ferrocade
 benches/scenes_arcade.py                          # equivalent scenes for Arcade

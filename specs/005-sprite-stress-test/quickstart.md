@@ -5,7 +5,7 @@
 ## Setup (one-time, dev venv only)
 
 ```powershell
-uv pip install -r benches/requirements.txt     # arcade==3.3.3, pygame-ce==2.5.8
+uv pip install -r benches/requirements.txt     # arcade==4.0.0.dev8 (+ pyglet 3.0.dev11), pygame-ce==2.5.8
 maturin develop --release                       # benchmark the optimized build
 ```
 

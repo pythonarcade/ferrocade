@@ -398,7 +398,7 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 - **Proves:** batching, GPU-layout buffers, and minimal conversion (§7) actually pay off.
 - **Delivers:** an FPS / frame-time readout (console or title bar until text rendering exists), and the benchmark scenes from §7.
 - **Scenes:** N static sprites, N moved via Rust `update()`, N moved from a Python loop. Optionally, N moved via NumPy views.
-- **Target (decided 2026-10-12):** 10,000 engine-moved sprites at 60 FPS on the development machine. The other scenes are measured, not pass/fail. Compare with Python Arcade and Pygame (dev-only installs) on the same scenes. The NumPy bulk path is deferred to the backlog.
+- **Target (decided 2026-10-12):** 10,000 engine-moved sprites at 60 FPS on the development machine. The other scenes are measured, not pass/fail. Compare with Python Arcade 4.0 (pre-release) and pygame-ce (dev-only installs) on the same scenes. The NumPy bulk path is deferred to the backlog.
 - **Done when:** the targets are met, or the bottlenecks are profiled and documented.
 
 ### Phase 4: Keyboard control
@@ -588,6 +588,7 @@ ferrocade/                 # repo root
 | 2026-10-12 | Rotation: a positive angle is counter-clockwise (math convention) | Chosen for mathematical consistency with y-up; differs from Arcade 3.x |
 | 2026-10-12 | Measured: per-sprite Python work costs about 15× the engine's bulk update (1,000 sprites: 1.34 ms vs. 0.087 ms) | Evidence for the hybrid collision design (§11 Q6); `docs/research/phase2-validation.md` |
 | 2026-10-12 | Phase 3 target: 10,000 engine-moved sprites at 60 FPS; compare with Arcade and Pygame; NumPy views deferred | Owner answers to the Phase 3 spec questions |
+| 2026-10-12 | Phase 3 comparison versions: Arcade 4.0 pre-release (`4.0.0.dev8`) and pygame-ce (not classic pygame) | Owner choice; both are dev-only benchmark installs |
 | 2026-10-12 | Collision direction: Rust does movement and detection, Python manages collisions (game logic) | Owner direction; delivery mechanism Proposed (§11 Q6: built-in Rust responses plus batched enter/exit events plus queries) |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
 | 2026-10-12 | Collision detection implemented in Rust | Design open (§11) |

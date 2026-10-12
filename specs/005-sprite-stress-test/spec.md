@@ -73,8 +73,8 @@ per scene, on the same machine and window size.
 2. **Given** the comparison table, **When** read, **Then** it's clear which scenes Ferrocade wins,
    loses, or ties, and by roughly how much.
 
-**Compared engines (owner decision, 2026-10-12):** **Python Arcade** (the GPU-batched peer) and
-**Pygame** (the CPU-blitting baseline). They're installed only in the development environment, not as Ferrocade dependencies.
+**Compared engines (owner decision, 2026-10-12):** **Python Arcade 4.0 pre-release** (the GPU-batched peer) and
+**pygame-ce** (the community Pygame, the CPU-blitting baseline). They're installed only in the development environment, not as Ferrocade dependencies.
 
 ---
 
