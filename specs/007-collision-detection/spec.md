@@ -8,6 +8,8 @@
 
 **Input**: User description: "Phase 5: collisions (engine spec §10 Phase 5, §11, docs/design/collision.md). Detect collisions between the ship and other sprites, with detection in Rust, fast enough for Phase 3 sprite counts." (The command was run without arguments right after the owner finished the collision design; the description is taken from the roadmap.)
 
+**Clarifications (owner, 2026-10-12)**: no collider debug view in Phase 5 (backlog); speed target: all pairs among 10,000 moving sprites < 2 ms, one sprite vs. 10,000 < 0.5 ms.
+
 **Context**: This is roadmap Phase 5. The architecture is already decided by the owner (engine spec §11, `docs/design/collision.md`):
 - **Colliders are separate objects**, attached **explicitly** to sprites, following the sprite's position, rotation, and scale. Sprites without a collider never collide.
 - **Shapes:** `CircleCollider`, `BoxCollider` (rotates with the sprite), `AABBCollider` (never rotates). More shapes come later, so the design must allow adding them.
@@ -16,7 +18,7 @@
 - **Detection only:** nothing is pushed apart or bounced by the engine in this phase.
 - Detection runs in the engine core. Python only receives results.
 
-**Out of scope**: colliders without a sprite, collision pairs the engine checks automatically every frame, enter/exit events, built-in responses (bounce, stop, solid), polygon and other shapes, swept tests for fast objects, contact details (normals, depth). These are in the backlog or listed as showcase ideas.
+**Out of scope**: colliders without a sprite, collision pairs the engine checks automatically every frame, enter/exit events, built-in responses (bounce, stop, solid), polygon and other shapes, swept tests for fast objects, contact details (normals, depth), and a debug view that draws colliders (owner: backlog). These are in the backlog or listed as showcase ideas.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -117,7 +119,6 @@ A player steers the ship (Phase 4 controls) through a field of drifting asteroid
 - **FR-013**: The collision feature MUST work the same way in the browser build.
 - **FR-014**: A Phase 5 example (`examples/05_collisions.py`) MUST let the player steer the ship among drifting asteroids with mixed collider shapes. Touched asteroids are removed, and the hit count is shown in the window title.
 - **FR-015**: Type stubs MUST describe the collider classes, the `collider` property, and the queries.
-- **FR-016**: [NEEDS CLARIFICATION: Should Phase 5 include a debug view that draws collider outlines over the sprites (like Arcade's hit box drawing)? It helps developers see and tune colliders, but adds drawing work to this phase.]
 
 ### Key Entities
 
@@ -130,7 +131,7 @@ A player steers the ship (Phase 4 controls) through a field of drifting asteroid
 ### Measurable Outcomes
 
 - **SC-001**: In automated tests, query results match a brute-force reference exactly for thousands of random shapes, positions, rotations, scales, and offsets (no missed or extra collisions).
-- **SC-002**: [NEEDS CLARIFICATION: What speed target should Phase 5 meet? For example, "finding all colliding pairs among 10,000 moving sprites in one list takes under N ms per frame on the development machine," and "checking the ship against 10,000 sprites takes under M ms."]
+- **SC-002**: On the development machine, finding all colliding pairs among **10,000 moving sprites in one list** takes **under 2 ms** per frame, and checking **one sprite against a list of 10,000** takes **under 0.5 ms** (owner target, 2026-10-12).
 - **SC-003**: A list of sprites that haven't moved costs no extra time for repeated queries in the same frame (within measurement noise).
 - **SC-004**: The example shows correct hits on desktop and in the browser, confirmed by automated checks.
 - **SC-005**: A developer can add "ship hits asteroid" behavior to the Phase 4 example in under 10 lines of Python.

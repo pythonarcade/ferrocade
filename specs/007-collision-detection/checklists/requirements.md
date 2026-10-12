@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -32,4 +32,4 @@
 ## Notes
 
 - The Python names (`CircleCollider`, `collides_with_list`, ...) are the user-facing interface already chosen with the owner (engine spec §11, `docs/design/collision.md`), so they appear as requirements. Engine internals (grids, Rust types) are kept out.
-- Two clarifications are open: FR-016 (collider debug view in scope?) and SC-002 (speed target). Awaiting the owner.
+- Clarifications resolved by the owner (2026-10-12): collider debug view → backlog (FR-016 removed); SC-002 speed target = option A.

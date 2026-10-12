@@ -529,6 +529,7 @@ The sections below are the original research and options, kept for reference.
 - [ ] Physics response (after the collision system, §11)
 - [ ] Angle-to-velocity helper: set a sprite's velocity from a heading (degrees, counter-clockwise) and a speed, so users rarely need `math.radians`/`cos`/`sin` (e.g. something like `sprite.set_velocity_from_angle(angle, speed)`; the exact API is TBD)
 - [ ] Shapes/primitives drawing
+- [ ] Collision debug view: draw collider shapes over sprites (like Arcade's hit box drawing); not Phase 5
 - [ ] Collision: colliders without a sprite (invisible triggers with their own position); not Phase 5
 - [ ] Collision: declared collision pairs checked automatically every frame (e.g. `collisions.watch(bullets, asteroids)`); needed for engine-driven events and responses (§11)
 - [ ] Collision shapes beyond Phase 5: convex polygon, auto hit box from texture alpha, capsule, pixel mask (§11)
@@ -631,6 +632,7 @@ ferrocade/                 # repo root
 | 2026-10-12 | Colliders are attached explicitly (no automatic colliders); colliders without a sprite go to the backlog | Owner answers to the collision open questions 1–2; `docs/design/collision.md` |
 | 2026-10-12 | Collider scale is coupled to `sprite.scale`; two box classes: `BoxCollider` (rotates) and `AABBCollider` (never rotates; name chosen by the owner) | Owner decisions; matches Unity/Godot/Arcade scaling; `docs/design/collision.md` |
 | 2026-10-12 | Collider offsets rotate with the sprite (`CircleCollider`, `BoxCollider`); `AABBCollider` offsets don't rotate | Owner accepted the proposal; `docs/design/collision.md` |
+| 2026-10-12 | Phase 5 speed target: all colliding pairs among 10,000 moving sprites in one list < 2 ms/frame; one sprite vs. 10,000 < 0.5 ms; collider debug view → backlog | Owner answers to the Phase 5 spec questions |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
 | 2026-10-12 | Collision detection implemented in Rust | Design open (§11) |
 | 2026-10-12 | winit for windowing | Confirmed |
