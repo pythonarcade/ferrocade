@@ -57,13 +57,13 @@ The frame statistics are foundational: the stress tool (US1) and the readout (US
 
 **Independent Test**: `python benches/stress.py --engine ferrocade` prints the maximum N and the dominant cost for all four scenes. The engine-moved scene reaches ≥ 10,000 (exit code 0).
 
-- [ ] T009 [US1] Create `benches/scenes_ferrocade.py` with the four scenes from data-model.md, all in an 800×600 window using `assets/images/ship.png` at scale 0.25:
+- [X] T009 [US1] Create `benches/scenes_ferrocade.py` with the four scenes from data-model.md, all in an 800×600 window using `assets/images/ship.png` at scale 0.25:
   - `static`: N sprites placed once and never updated.
   - `engine_moved`: "slow drift". Random positions inside the window, velocities ≤ 20 px/s, random `angular_velocity` ±90. Each update calls `sprite_list.update(dt)` only, with **no per-sprite Python work**. Add `rescatter()` to reset positions between ramp steps.
   - `python_moved`: N sprites whose `position` is set by a Python loop each update (a drift computed in Python).
   - `shapes`: N mixed `RectangleSprite`/`CircleSprite` (sizes 4–12, random CSS colors) with engine drift, as in `engine_moved`.
   - Every scene exposes `resize(n)` (adds or removes sprites in the existing list, without recreating the window) and per-update timing hooks: `update_ms` (the engine update call) and `game_ms` (Python scene logic).
-- [ ] T010 [US1] Create the driver `benches/stress.py` (research R1, R3).
+- [X] T010 [US1] Create the driver `benches/stress.py` (research R1, R3).
   - **Measurement:** one window per engine run. Per step: set N, wait 1 s (warm-up), then measure for 3 s:
     - `fps`, average and p95 frame time (from `perf_counter` deltas in `on_draw`)
     - `update_ms` and `game_ms`, plus `draw_ms` (timed around `on_draw`'s queue calls)
@@ -74,8 +74,8 @@ The frame statistics are foundational: the stress tool (US1) and the readout (US
   - **CLI:** `--scene`, `--engine`, `--quick` (coarser ramp, 0.5 s + 1 s steps), `--out benches/results/`.
   - **Output:** a summary table on stdout, plus JSON `benches/results/<date>-<machine>.json` with all measurements, the machine description (CPU, GPU, OS), and versions.
   - **Exit code:** **2 if the Ferrocade `engine_moved` maximum is < 10,000**, otherwise 0.
-- [ ] T011 [US1] `maturin develop --release`, then run `python benches/stress.py --quick --engine ferrocade` (P2), then `python benches/stress.py --scene engine_moved --engine ferrocade` (P3). Record the maximum N and the breakdown.
-- [ ] T012 [US1] **If P3 is below 10,000:** profile the dominant cost and fix it.
+- [X] T011 [US1] `maturin develop --release`, then run `python benches/stress.py --quick --engine ferrocade` (P2), then `python benches/stress.py --scene engine_moved --engine ferrocade` (P3). Record the maximum N and the breakdown.
+- [X] T012 [US1] **If P3 is below 10,000:** profile the dominant cost and fix it.
   - Candidates from research R6: avoid cloning `list.sprites` in `store::update_list` (iterate by index), batch the dirty-range marking, and cut per-sprite `Instance` rewrites for sprites that are in only one list.
   - Re-run P3 after each change, and record the before/after numbers.
   - **If P3 already passes**, still record the dominant cost and headroom at 10,000. This task is then just measurement.
@@ -91,20 +91,20 @@ The frame statistics are foundational: the stress tool (US1) and the readout (US
 
 **Independent Test**: `python benches/stress.py` prints a table with the maximum N per scene for all three engines (or "n/a" with a reason).
 
-- [ ] T014 [P] [US2] Create `benches/scenes_arcade.py` against **Arcade 4.0.0.dev8**. Check each API against the installed package source (`arcade.Window`, `arcade.Sprite`, `arcade.SpriteList`, `SpriteSolidColor`, `SpriteCircle`, and the update and draw hooks), since 4.0 may differ from 3.x. Implement:
+- [X] T014 [P] [US2] Create `benches/scenes_arcade.py` against **Arcade 4.0.0.dev8**. Check each API against the installed package source (`arcade.Window`, `arcade.Sprite`, `arcade.SpriteList`, `SpriteSolidColor`, `SpriteCircle`, and the update and draw hooks), since 4.0 may differ from 3.x. Implement:
   - `static`
   - `engine_moved`: Arcade's `SpriteList.update()` with per-frame `change_x`/`change_y` equal to px/s ÷ 60, and `change_angle` for spin
   - `python_moved`: a Python loop setting `center_x`/`center_y`
   - `shapes`: solid-color and circle sprites
   - Use the same image, scale, window size, `resize(n)`, and timing hooks as the Ferrocade scenes.
   - Mark anything with no equivalent as "n/a", with the reason.
-- [ ] T015 [P] [US2] Create `benches/scenes_pygame.py` (pygame-ce 2.5.8). It uses an 800×600 display, `pygame.sprite.Group`, the ship image scaled once with `pygame.transform.smoothscale`, and `pygame.time.Clock`.
+- [X] T015 [P] [US2] Create `benches/scenes_pygame.py` (pygame-ce 2.5.8). It uses an 800×600 display, `pygame.sprite.Group`, the ship image scaled once with `pygame.transform.smoothscale`, and `pygame.time.Clock`.
   - `static`: `Group.draw`.
   - `engine_moved`: `Group.update()` with sprites moving float positions into `rect`. Rotation: either pre-rendered rotation frames, or the spin omitted and documented (rotating each frame with `transform.rotate` would measure something else).
   - `python_moved`: an explicit loop setting `rect.center`.
   - `shapes`: pre-filled `Surface`s, plus circles drawn once to surfaces.
   - Use the same `resize(n)` and timing hooks. Note in the scene docstring that Pygame blits on the CPU.
-- [ ] T016 [US2] Extend `benches/stress.py` so `--engine arcade|pygame|all` drives those scene modules through the same ramp and sustainability rule. For engines without `render_cpu_ms`, work = update + game + draw time, measured in Python. Skip uninstalled engines with a note.
+- [X] T016 [US2] Extend `benches/stress.py` so `--engine arcade|pygame|all` drives those scene modules through the same ramp and sustainability rule. For engines without `render_cpu_ms`, work = update + game + draw time, measured in Python. Skip uninstalled engines with a note.
 - [ ] T017 [US2] Run the full comparison `python benches/stress.py` (P4). It must complete in ≤ 10 minutes. Keep the JSON.
 
 **Checkpoint**: US2 is complete. The comparison table exists.
