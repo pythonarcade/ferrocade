@@ -54,17 +54,17 @@ description: "Task list for Phase 1b — Web Feasibility Spike"
 
 **⚠️ The core must compile for `wasm32-unknown-unknown` before any approach-B work.**
 
-- [ ] T005 Make `crates/ferrocade` build for `wasm32-unknown-unknown`.
+- [X] T005 Make `crates/ferrocade` build for `wasm32-unknown-unknown`.
   - In `crates/ferrocade/Cargo.toml`, add `[target.'cfg(target_arch = "wasm32")'.dependencies] wgpu = { workspace = true, features = ["webgpu", "webgl"] }`.
   - Make sure `winit` is only a dependency on `cfg(not(target_arch = "wasm32"))`, since the desktop platform module is already cfg-gated.
   - Run `cargo check -p ferrocade --target wasm32-unknown-unknown` and fix any wasm-only errors **without changing desktop behavior**.
-- [ ] T006 Add `pub fn load_from_bytes(path: &Path, bytes: &[u8]) -> Result<Arc<TextureData>>` to `crates/ferrocade/src/texture.rs`.
+- [X] T006 Add `pub fn load_from_bytes(path: &Path, bytes: &[u8]) -> Result<Arc<TextureData>>` to `crates/ferrocade/src/texture.rs`.
   - It uses the same cache. The key is `path` as given, not canonicalized, because the web has no filesystem.
   - On a miss it decodes `bytes`, with the same `Error::Decode { path, reason }` mapping.
   - Refactor `load()` to canonicalize, read via `assets::read_bytes`, and then share the decode and insert code (the disk-read counter only counts `load()` reads).
-- [ ] T007 [P] Add tests to `crates/ferrocade/tests/texture_cache.rs`: `load_from_bytes("mem/ship.png", ship_bytes)` gives 99×75, a second call returns the same `Arc` (`Arc::ptr_eq`), and garbage bytes give `Error::Decode` mentioning `mem/bad.png`.
-- [ ] T008 [P] Add `pub fn backend_name(&self) -> String` to `crates/ferrocade/src/render/mod.rs` (it records the adapter's `get_info().backend` at creation). Confirm `Renderer::with_surface` has no desktop-only code paths on wasm32 (no `pollster`).
-- [ ] T009 Desktop regression gate: `cargo test --workspace`, `maturin develop`, and `pytest` all pass (W9). `cargo check -p ferrocade-web --target wasm32-unknown-unknown` passes.
+- [X] T007 [P] Add tests to `crates/ferrocade/tests/texture_cache.rs`: `load_from_bytes("mem/ship.png", ship_bytes)` gives 99×75, a second call returns the same `Arc` (`Arc::ptr_eq`), and garbage bytes give `Error::Decode` mentioning `mem/bad.png`.
+- [X] T008 [P] Add `pub fn backend_name(&self) -> String` to `crates/ferrocade/src/render/mod.rs` (it records the adapter's `get_info().backend` at creation). Confirm `Renderer::with_surface` has no desktop-only code paths on wasm32 (no `pollster`).
+- [X] T009 Desktop regression gate: `cargo test --workspace`, `maturin develop`, and `pytest` all pass (W9). `cargo check -p ferrocade-web --target wasm32-unknown-unknown` passes.
 
 **Checkpoint**: the core builds for the browser, and the desktop is unchanged.
 

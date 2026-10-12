@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use ferrocade::Error;
 use ferrocade::texture;
@@ -46,4 +47,21 @@ fn text_file_is_rejected() {
         matches!(err, Error::Decode { .. } | Error::Unsupported { .. }),
         "{err:?}"
     );
+}
+
+#[test]
+fn load_from_bytes_decodes_and_caches_by_path() {
+    let bytes = std::fs::read(ship_path()).unwrap();
+    let a = texture::load_from_bytes(Path::new("mem/ship.png"), &bytes).unwrap();
+    assert_eq!((a.width, a.height), (99, 75));
+    assert_eq!(a.path, Path::new("mem/ship.png"));
+    let b = texture::load_from_bytes(Path::new("mem/ship.png"), &bytes).unwrap();
+    assert!(Arc::ptr_eq(&a, &b));
+}
+
+#[test]
+fn load_from_bytes_reports_decode_errors_with_path() {
+    let err = texture::load_from_bytes(Path::new("mem/bad.png"), b"nope").unwrap_err();
+    assert!(matches!(err, Error::Decode { .. }), "{err:?}");
+    assert!(err.to_string().contains("mem/bad.png"));
 }

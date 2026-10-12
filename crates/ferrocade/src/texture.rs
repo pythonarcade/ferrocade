@@ -71,23 +71,39 @@ pub fn load(path: &Path) -> Result<Arc<TextureData>> {
     if let Some(data) = cache.get(&canonical) {
         return Ok(data.clone());
     }
-
     let bytes = assets::read_bytes(&canonical)?;
     DISK_READS.fetch_add(1, Ordering::Relaxed);
-    let image = image::load_from_memory(&bytes).map_err(|e| Error::Decode {
-        path: canonical.clone(),
+    let data = decode(&canonical, &bytes)?;
+    cache.insert(canonical, data.clone());
+    Ok(data)
+}
+
+/// Load an image from bytes already in memory (e.g. fetched by a browser), cached by `path`.
+///
+/// `path` is used as given (not canonicalized), since there may be no filesystem to resolve it.
+pub fn load_from_bytes(path: &Path, bytes: &[u8]) -> Result<Arc<TextureData>> {
+    let mut cache = CACHE.lock().unwrap();
+    if let Some(data) = cache.get(path) {
+        return Ok(data.clone());
+    }
+    let data = decode(path, bytes)?;
+    cache.insert(path.to_path_buf(), data.clone());
+    Ok(data)
+}
+
+fn decode(path: &Path, bytes: &[u8]) -> Result<Arc<TextureData>> {
+    let image = image::load_from_memory(bytes).map_err(|e| Error::Decode {
+        path: path.to_path_buf(),
         reason: e.to_string(),
     })?;
     let rgba = image.into_rgba8();
-    let data = Arc::new(TextureData {
+    Ok(Arc::new(TextureData {
         id: TextureId(NEXT_ID.fetch_add(1, Ordering::Relaxed)),
-        path: canonical.clone(),
+        path: path.to_path_buf(),
         width: rgba.width(),
         height: rgba.height(),
         pixels: rgba.into_raw().into(),
-    });
-    cache.insert(canonical, data.clone());
-    Ok(data)
+    }))
 }
 
 /// Number of image files read from disk so far (for verifying the cache).
