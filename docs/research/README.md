@@ -6,5 +6,6 @@ Record what was tried, what was measured, and the conclusion.
 ## Reports
 - [phase1-validation.md](phase1-validation.md): Phase 1 validation record
 - [phase2-validation.md](phase2-validation.md): Phase 2 (movement, rotation) validation record, including engine vs. Python per-sprite cost
+- [phase3-benchmarks.md](phase3-benchmarks.md): Phase 3 sprite stress test: Ferrocade vs. Arcade 4.0.0.dev8 vs. pygame-ce, plus the GPU-selection finding
 - [phase1c-validation.md](phase1c-validation.md): Phase 1c (CSS colors, shape sprites) validation record
 - [web-spike.md](web-spike.md): Phase 1b web feasibility spike (recommendation accepted: web = approach B)

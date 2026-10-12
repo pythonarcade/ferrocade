@@ -79,7 +79,7 @@ The frame statistics are foundational: the stress tool (US1) and the readout (US
   - Candidates from research R6: avoid cloning `list.sprites` in `store::update_list` (iterate by index), batch the dirty-range marking, and cut per-sprite `Instance` rewrites for sprites that are in only one list.
   - Re-run P3 after each change, and record the before/after numbers.
   - **If P3 already passes**, still record the dominant cost and headroom at 10,000. This task is then just measurement.
-- [ ] T013 [US1] Run `python benches/stress.py --engine ferrocade` (all four scenes, full ramp) and keep the JSON for the report.
+- [X] T013 [US1] Run `python benches/stress.py --engine ferrocade` (all four scenes, full ramp) and keep the JSON for the report.
 
 **Checkpoint**: US1 is complete. Ferrocade's limits are known, and the target is evaluated.
 
@@ -105,7 +105,7 @@ The frame statistics are foundational: the stress tool (US1) and the readout (US
   - `shapes`: pre-filled `Surface`s, plus circles drawn once to surfaces.
   - Use the same `resize(n)` and timing hooks. Note in the scene docstring that Pygame blits on the CPU.
 - [X] T016 [US2] Extend `benches/stress.py` so `--engine arcade|pygame|all` drives those scene modules through the same ramp and sustainability rule. For engines without `render_cpu_ms`, work = update + game + draw time, measured in Python. Skip uninstalled engines with a note.
-- [ ] T017 [US2] Run the full comparison `python benches/stress.py` (P4). It must complete in ≤ 10 minutes. Keep the JSON.
+- [X] T017 [US2] Run the full comparison `python benches/stress.py` (P4). It must complete in ≤ 10 minutes. Keep the JSON.
 
 **Checkpoint**: US2 is complete. The comparison table exists.
 
@@ -127,7 +127,7 @@ The frame statistics are foundational: the stress tool (US1) and the readout (US
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T021 Write `docs/research/phase3-benchmarks.md`:
+- [X] T021 Write `docs/research/phase3-benchmarks.md`:
   - the machine and versions (Ferrocade commit, Arcade 4.0.0.dev8, pyglet 3.0.dev11, pygame-ce 2.5.8, Python 3.14)
   - the result table (maximum N per scene × engine)
   - the time breakdown per scene at the limit
@@ -138,7 +138,7 @@ The frame statistics are foundational: the stress tool (US1) and the readout (US
   - an informational web measurement (the default `02_bouncing_ship --many` in the browser with `show_fps`)
   - recommendations for the showcase
   - Link it from `docs/research/README.md`.
-- [ ] T022 Run the regression and lint:
+- [X] T022 Run the regression and lint:
   - `cargo fmt --all`
   - `cargo clippy --workspace --all-targets -- -D warnings`
   - `cargo clippy -p ferrocade --no-default-features --all-targets -- -D warnings`
@@ -146,7 +146,7 @@ The frame statistics are foundational: the stress tool (US1) and the readout (US
   - `cargo test --workspace`, `maturin develop`, `pytest`
   - the stub check against the runtime
   - the browser checks for `01_centered_ship`, `01c_shapes`, and `02_bouncing_ship --motion`
-- [ ] T023 Update `docs/spec/ENGINE_SPEC.md`: mark Phase 3 implemented in §10 with the headline numbers, add decision log entries for any optimizations or deviations, and add the backlog items found (for example, a vsync-off benchmark mode if useful).
+- [X] T023 Update `docs/spec/ENGINE_SPEC.md`: mark Phase 3 implemented in §10 with the headline numbers, add decision log entries for any optimizations or deviations, and add the backlog items found (for example, a vsync-off benchmark mode if useful).
 
 ---
 

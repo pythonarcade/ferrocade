@@ -40,6 +40,7 @@ pub struct Renderer {
     target: Target,
     sprites: SpritePipeline,
     backend: wgpu::Backend,
+    adapter_name: String,
 }
 
 impl Renderer {
@@ -83,6 +84,7 @@ impl Renderer {
         let sprites = SpritePipeline::new(&device, view_format);
         let mut renderer = Self {
             backend: adapter.get_info().backend,
+            adapter_name: adapter.get_info().name,
             device,
             queue,
             sprites,
@@ -120,6 +122,7 @@ impl Renderer {
         let sprites = SpritePipeline::new(&device, OFFSCREEN_FORMAT);
         Ok(Self {
             backend: adapter.get_info().backend,
+            adapter_name: adapter.get_info().name,
             device,
             queue,
             sprites,
@@ -139,6 +142,11 @@ impl Renderer {
     /// Name of the graphics backend in use (e.g. "Dx12", "Vulkan", "BrowserWebGpu", "Gl").
     pub fn backend_name(&self) -> String {
         format!("{:?}", self.backend)
+    }
+
+    /// Name of the GPU in use (e.g. "NVIDIA GeForce ..."), for diagnostics and reports.
+    pub fn adapter_name(&self) -> &str {
+        &self.adapter_name
     }
 
     /// Reconfigure the surface for a new physical size. A zero size (minimized) pauses drawing.
