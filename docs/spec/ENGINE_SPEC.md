@@ -131,9 +131,11 @@ We compared the class structure of other engines:
   - **Circles** share one built-in **white circle texture** (high resolution, anti-aliased edge), drawn at diameter × diameter.
   - Because shapes of any size or color reuse the same textures, **they batch into the same draw calls** as each other.
 - **Side benefit:** `sprite.color` also tints and fades image sprites (for example, a damage flash, or alpha fade-out).
-- **API: *Proposed*, to finalize in the Phase 1c spec.** Factory functions that return ordinary `Sprite`s, e.g. `fc.Sprite.rectangle(width, height, color, center_x=0, center_y=0)` and `fc.Sprite.circle(radius, color, center_x=0, center_y=0)`, plus a `sprite.color` property. Still to work out:
-  - how subclasses (`class Wall(fc.Sprite)`) create shape sprites
-  - whether a circle's smooth edge should ignore the window's `NEAREST` filter (for example, a built-in `LINEAR` override on the circle texture)
+- **API (decided 2026-10-12):** dedicated sprite classes that extend `Sprite`:
+  - `fc.RectangleSprite(width, height, color, center_x=0, center_y=0)`
+  - `fc.CircleSprite(radius, color, center_x=0, center_y=0, *, filter=None)`
+  - Game classes extend them as usual (`class Wall(fc.RectangleSprite)`), and every sprite gets a `color` property.
+- **Circle edges** follow the window's filter (stepped with `NEAREST`, smooth with `LINEAR`). A circle may override this with `filter=`, the same rule as `Texture(..., filter=...)`.
 
 ### Coordinate system (decided)
 - The origin `(0, 0)` is the **bottom-left** corner of the window, with **y going up** (same as Arcade and OpenGL).
@@ -541,6 +543,8 @@ ferrocade/                 # repo root
 | 2026-10-12 | `fc.color` = all CSS named colors, UPPER_SNAKE names, CSS values win (GREEN=(0,128,0)); default background renamed `DEFAULT_BACKGROUND` (32,32,32) | §3 "Colors" |
 | 2026-10-12 | Solid-color rectangle and circle sprites without images, via per-sprite `color` tint plus shared built-in white textures (instance stays 48 bytes) | §3 "Shape sprites"; API details proposed |
 | 2026-10-12 | New Phase 1c (colors + shape sprites) before Phase 2 | §10 |
+| 2026-10-12 | Shape API: `fc.RectangleSprite` / `fc.CircleSprite` classes (extend `Sprite`) | Chosen over factory functions and built-in textures, because it suits subclassing |
+| 2026-10-12 | Circle edges follow the window filter, with a per-circle `filter=` override | Consistent with "no hidden default filter" |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
 | 2026-10-12 | Collision detection implemented in Rust | Design open (§11) |
 | 2026-10-12 | winit for windowing | Confirmed |
