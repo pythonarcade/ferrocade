@@ -1,5 +1,5 @@
 // SPIKE: load the web example in headless Chrome/Edge and report what happened.
-// Usage: node check.mjs [url] [--browser=chrome|edge] [--fresh] [--motion] [--keys] [--collisions]
+// Usage: node check.mjs [url] [--browser=chrome|edge] [--fresh] [--motion] [--keys] [--collisions] [--showcase]
 // Prints a JSON summary (backend, time-to-ship, centering, bytes by kind) and saves a screenshot.
 import fs from "node:fs";
 import os from "node:os";
@@ -117,11 +117,31 @@ if (args.includes("--collisions")) {
   if (!(before >= 0 && after > before)) outcome = "collisions-failed";
 }
 
+// --showcase: 06_showcase prints stats lines ("balls=... fps=...") to the console; wait for two,
+// check the frame rate, and check that the newest ball moves.
+let showcase = null;
+if (args.includes("--showcase")) {
+  const statsLines = () => console_.filter((l) => l.startsWith("balls="));
+  const deadline = Date.now() + 10000;
+  while (statsLines().length < 2 && Date.now() < deadline) await new Promise((r) => setTimeout(r, 250));
+  const last = statsLines().at(-1) ?? "";
+  const fps = Number((last.match(/fps=([\d.]+)/) ?? [0, 0])[1]);
+  const read = () => page.evaluate(() => {
+    const e = window.ferrocadeEngine;
+    return Array.from(e.get_sprite(e.sprite_handles() - 1)).slice(0, 2);
+  });
+  const before = await read();
+  await new Promise((r) => setTimeout(r, 500));
+  const after = await read();
+  showcase = { lines: statsLines().length, last, fps, moved: Math.hypot(after[0] - before[0], after[1] - before[1]) };
+  if (!(showcase.lines >= 2 && fps > 0 && showcase.moved > 1)) outcome = "showcase-failed";
+}
+
 const pick = (prefix) => console_.find((l) => l.includes(prefix)) ?? null;
 const summary = {
   url, browser: browserName, outcome,
   backend: pick("backend="), timeToShip: pick("ship-visible"), centering: pick("centering"),
-  exampleUnchanged, drawCalls, motion, keys, collisions, bytes, errorText: errorText || null, screenshot: shot,
+  exampleUnchanged, drawCalls, motion, keys, collisions, showcase, bytes, errorText: errorText || null, screenshot: shot,
   console: console_.slice(0, 40),
 };
 console.log(JSON.stringify(summary, null, 2));

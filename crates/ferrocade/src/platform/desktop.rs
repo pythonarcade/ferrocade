@@ -15,7 +15,7 @@ use winit::window::{Window, WindowId};
 use crate::input::{Key, RawKeyEvent};
 use crate::render::Renderer;
 use crate::timestep::FixedTimestep;
-use crate::window::{GameCallbacks, RunError, WindowConfig, WindowState, fps_title};
+use crate::window::{FrameSample, GameCallbacks, RunError, WindowConfig, WindowState, fps_title};
 use crate::{Error, frame, store};
 
 thread_local! {
@@ -43,6 +43,8 @@ pub fn run<C: GameCallbacks>(
         state.reset_input();
         // The window is created with the current title.
         state.take_title_change();
+        // Engine time spent before the run (e.g. setting up sprites) isn't part of any frame.
+        store::global().take_frame_timings();
         let mut app = App {
             config,
             state,
@@ -170,12 +172,15 @@ impl<C: GameCallbacks> App<'_, C> {
 
         if let Some(renderer) = &self.renderer {
             let stats = renderer.last_frame_stats();
-            let rolled = self.state.record_frame(
-                elapsed,
-                stats.render_cpu_ms,
-                stats.draw_calls,
-                stats.instances,
-            );
+            let (update_ms, collision_ms) = store::global().take_frame_timings();
+            let rolled = self.state.record_frame(&FrameSample {
+                interval: elapsed,
+                render_cpu_ms: stats.render_cpu_ms,
+                draw_calls: stats.draw_calls,
+                instances: stats.instances,
+                update_ms,
+                collision_ms,
+            });
             if let Some(window) = &self.window {
                 let show = self.state.show_fps();
                 let changed = self.state.take_title_change().is_some();

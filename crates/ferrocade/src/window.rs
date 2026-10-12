@@ -60,6 +60,22 @@ pub struct FrameSnapshot {
     pub render_cpu_ms: f64,
     pub draw_calls: u32,
     pub instances: u32,
+    /// Engine time per frame spent moving sprites (`SpriteList.update`).
+    pub update_ms: f64,
+    /// Engine time per frame spent in collision queries and bounce calls.
+    pub collision_ms: f64,
+}
+
+/// One frame's measurements, passed to `WindowState::record_frame`.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct FrameSample {
+    /// Seconds since the previous frame.
+    pub interval: f64,
+    pub render_cpu_ms: f64,
+    pub draw_calls: u32,
+    pub instances: u32,
+    pub update_ms: f64,
+    pub collision_ms: f64,
 }
 
 /// Accumulates per-frame timings and rolls them into a snapshot about once per second.
@@ -68,6 +84,8 @@ struct RollingStats {
     frames: u32,
     seconds: f64,
     render_ms: f64,
+    update_ms: f64,
+    collision_ms: f64,
     snapshot: FrameSnapshot,
     rolled_once: bool,
 }
@@ -76,16 +94,13 @@ const STATS_WINDOW_SECONDS: f64 = 1.0;
 
 impl RollingStats {
     /// Returns true when a new ~1 s window was completed.
-    fn record(
-        &mut self,
-        interval: f64,
-        render_cpu_ms: f64,
-        draw_calls: u32,
-        instances: u32,
-    ) -> bool {
+    fn record(&mut self, sample: &FrameSample) -> bool {
         self.frames += 1;
-        self.seconds += interval;
-        self.render_ms += render_cpu_ms;
+        self.seconds += sample.interval;
+        self.render_ms += sample.render_cpu_ms;
+        self.update_ms += sample.update_ms;
+        self.collision_ms += sample.collision_ms;
+        let (draw_calls, instances) = (sample.draw_calls, sample.instances);
         let averaged = FrameSnapshot {
             fps: if self.seconds > 0.0 {
                 self.frames as f64 / self.seconds
@@ -96,6 +111,8 @@ impl RollingStats {
             render_cpu_ms: self.render_ms / self.frames as f64,
             draw_calls,
             instances,
+            update_ms: self.update_ms / self.frames as f64,
+            collision_ms: self.collision_ms / self.frames as f64,
         };
         let rolled = self.seconds >= STATS_WINDOW_SECONDS;
         if rolled || !self.rolled_once {
@@ -107,7 +124,8 @@ impl RollingStats {
         }
         if rolled {
             self.rolled_once = true;
-            (self.frames, self.seconds, self.render_ms) = (0, 0.0, 0.0);
+            (self.frames, self.seconds) = (0, 0.0);
+            (self.render_ms, self.update_ms, self.collision_ms) = (0.0, 0.0, 0.0);
         }
         rolled
     }
@@ -141,17 +159,9 @@ impl WindowState {
     }
 
     /// Record one frame's timing. Returns the new snapshot when a ~1 s window completes.
-    pub fn record_frame(
-        &self,
-        interval: f64,
-        render_cpu_ms: f64,
-        draw_calls: u32,
-        instances: u32,
-    ) -> Option<FrameSnapshot> {
+    pub fn record_frame(&self, sample: &FrameSample) -> Option<FrameSnapshot> {
         let mut s = self.0.lock().unwrap();
-        s.stats
-            .record(interval, render_cpu_ms, draw_calls, instances)
-            .then_some(s.stats.snapshot)
+        s.stats.record(sample).then_some(s.stats.snapshot)
     }
 
     pub fn frame_stats(&self) -> FrameSnapshot {
@@ -222,7 +232,15 @@ mod tests {
         let mut s = RollingStats::default();
         let mut rolls = 0;
         for _ in 0..120 {
-            if s.record(1.0 / 60.0, 2.0, 3, 30) {
+            let sample = FrameSample {
+                interval: 1.0 / 60.0,
+                render_cpu_ms: 2.0,
+                draw_calls: 3,
+                instances: 30,
+                update_ms: 0.5,
+                collision_ms: 1.5,
+            };
+            if s.record(&sample) {
                 rolls += 1;
             }
         }
@@ -231,12 +249,20 @@ mod tests {
         assert!((s.snapshot.frame_ms - 16.667).abs() < 0.1);
         assert!((s.snapshot.render_cpu_ms - 2.0).abs() < 1e-9);
         assert_eq!((s.snapshot.draw_calls, s.snapshot.instances), (3, 30));
+        assert!((s.snapshot.update_ms - 0.5).abs() < 1e-9);
+        assert!((s.snapshot.collision_ms - 1.5).abs() < 1e-9);
     }
 
     #[test]
     fn stats_report_values_before_first_window() {
         let mut s = RollingStats::default();
-        s.record(0.02, 1.0, 1, 5);
+        s.record(&FrameSample {
+            interval: 0.02,
+            render_cpu_ms: 1.0,
+            draw_calls: 1,
+            instances: 5,
+            ..Default::default()
+        });
         assert!((s.snapshot.fps - 50.0).abs() < 1e-9);
     }
 

@@ -214,8 +214,15 @@ impl Engine {
         let interval = self.last_frame.map_or(0.0, |t| (now - t).as_secs_f64());
         self.last_frame = Some(now);
         let s = self.renderer.last_frame_stats();
-        self.stats
-            .record_frame(interval, s.render_cpu_ms, s.draw_calls, s.instances);
+        let (update_ms, collision_ms) = store::global().take_frame_timings();
+        self.stats.record_frame(&ferrocade::window::FrameSample {
+            interval,
+            render_cpu_ms: s.render_cpu_ms,
+            draw_calls: s.draw_calls,
+            instances: s.instances,
+            update_ms,
+            collision_ms,
+        });
         Ok(())
     }
 
@@ -323,7 +330,8 @@ impl Engine {
             .map_err(js_err)
     }
 
-    /// `[fps, frame_ms, render_cpu_ms, draw_calls, instances]` averaged over ~1 s.
+    /// `[fps, frame_ms, render_cpu_ms, draw_calls, instances, update_ms, collision_ms]` averaged
+    /// over ~1 s.
     pub fn frame_stats(&self) -> Vec<f64> {
         let s = self.stats.frame_stats();
         vec![
@@ -332,6 +340,8 @@ impl Engine {
             s.render_cpu_ms,
             s.draw_calls as f64,
             s.instances as f64,
+            s.update_ms,
+            s.collision_ms,
         ]
     }
 
@@ -508,6 +518,27 @@ impl Engine {
             .within_list(self.list(list)?)
             .map_err(js_err)?;
         Ok(pairs.into_iter().flat_map(|(i, j)| [i, j]).collect())
+    }
+
+    /// Bounce a list's circle sprites off each other; returns the contacts resolved.
+    pub fn bounce_each_other(&self, list: u32) -> Result<u32, JsError> {
+        let n = store::global()
+            .bounce_within(self.list(list)?)
+            .map_err(js_err)?;
+        Ok(n as u32)
+    }
+
+    /// Bounce a list's circle sprites off `walls`; returns the contacts resolved.
+    pub fn bounce_off(&self, list: u32, walls: u32) -> Result<u32, JsError> {
+        let n = store::global()
+            .bounce_off(self.list(list)?, self.list(walls)?)
+            .map_err(js_err)?;
+        Ok(n as u32)
+    }
+
+    /// Number of sprite handles created so far (the newest is `sprite_handles() - 1`; for checks).
+    pub fn sprite_handles(&self) -> u32 {
+        self.sprites.len() as u32
     }
 
     /// Queue a list for drawing. Only valid between `begin_frame` and `end_frame`.

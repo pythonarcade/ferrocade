@@ -27,14 +27,27 @@ pub struct PyFrameStats {
     draw_calls: u32,
     #[pyo3(get)]
     instances: u32,
+    /// Average engine time per frame spent moving sprites (`SpriteList.update`), in milliseconds.
+    #[pyo3(get)]
+    update_ms: f64,
+    /// Average engine time per frame spent in collision queries and bounce calls, in milliseconds.
+    #[pyo3(get)]
+    collision_ms: f64,
 }
 
 #[pymethods]
 impl PyFrameStats {
     fn __repr__(&self) -> String {
         format!(
-            "FrameStats(fps={:.1}, frame_ms={:.2}, render_cpu_ms={:.3}, draw_calls={}, instances={})",
-            self.fps, self.frame_ms, self.render_cpu_ms, self.draw_calls, self.instances
+            "FrameStats(fps={:.1}, frame_ms={:.2}, render_cpu_ms={:.3}, draw_calls={}, instances={}, \
+             update_ms={:.3}, collision_ms={:.3})",
+            self.fps,
+            self.frame_ms,
+            self.render_cpu_ms,
+            self.draw_calls,
+            self.instances,
+            self.update_ms,
+            self.collision_ms
         )
     }
 }
@@ -148,6 +161,8 @@ impl PyWindow {
             render_cpu_ms: s.render_cpu_ms,
             draw_calls: s.draw_calls,
             instances: s.instances,
+            update_ms: s.update_ms,
+            collision_ms: s.collision_ms,
         }
     }
 

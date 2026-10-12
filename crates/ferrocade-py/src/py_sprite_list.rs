@@ -101,6 +101,18 @@ impl PySpriteList {
         Self::pairs(py, &pairs, &self.refs, &self.refs)
     }
 
+    /// Bounce this list's circle sprites off each other as equal-mass, perfectly elastic circles.
+    /// Returns the number of contacts resolved. One engine call.
+    fn bounce_each_other(&self) -> PyResult<usize> {
+        store::global().bounce_within(self.id).py()
+    }
+
+    /// Bounce this list's circle sprites off `walls` (which never move). Returns the number of
+    /// contacts resolved. One engine call.
+    fn bounce_off(&self, walls: PyRef<'_, PySpriteList>) -> PyResult<usize> {
+        store::global().bounce_off(self.id, walls.id).py()
+    }
+
     fn __len__(&self) -> usize {
         self.refs.len()
     }

@@ -6,6 +6,7 @@
 //! world shapes from sprite state, use a per-list grid cached by the list's content version, and
 //! return all results at once. Detection only: nothing is moved.
 
+pub mod bounce;
 pub mod grid;
 pub mod narrow;
 pub mod query;

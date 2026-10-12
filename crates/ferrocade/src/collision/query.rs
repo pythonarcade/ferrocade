@@ -42,8 +42,12 @@ impl CollisionCache {
         self.grid_ready = true;
     }
 
+    /// The grid, if it's built for the current contents and the list is big enough to use it
+    /// (a list that shrank below the threshold keeps its old grid's memory, but not its use).
     fn grid(&self) -> Option<&Grid> {
-        self.grid.as_ref().filter(|_| self.grid_ready)
+        self.grid
+            .as_ref()
+            .filter(|_| self.grid_ready && self.present.len() >= GRID_THRESHOLD)
     }
 }
 
@@ -92,6 +96,13 @@ impl SpriteStore {
     /// Whether two sprites' colliders overlap or touch. `false` if either has no collider, or
     /// for a sprite with itself.
     pub fn collides(&self, a: SpriteId, b: SpriteId) -> Result<bool> {
+        let started = web_time::Instant::now();
+        let result = self.collides_untimed(a, b);
+        self.add_collision_time(started);
+        result
+    }
+
+    pub(crate) fn collides_untimed(&self, a: SpriteId, b: SpriteId) -> Result<bool> {
         let (sa, sb) = (self.sprite(a)?, self.sprite(b)?);
         if a == b {
             return Ok(false);
@@ -104,6 +115,17 @@ impl SpriteStore {
 
     /// Slots in `list` whose colliders touch `sprite`'s, ascending (never the sprite itself).
     pub fn sprite_vs_list(&mut self, sprite: SpriteId, list: ListId) -> Result<Vec<u32>> {
+        let started = web_time::Instant::now();
+        let result = self.sprite_vs_list_untimed(sprite, list);
+        self.add_collision_time(started);
+        result
+    }
+
+    pub(crate) fn sprite_vs_list_untimed(
+        &mut self,
+        sprite: SpriteId,
+        list: ListId,
+    ) -> Result<Vec<u32>> {
         self.refresh_collision_cache(list)?;
         let s = self.sprite(sprite)?;
         let Some(probe) = sprite_shape(self, s) else {
@@ -132,6 +154,13 @@ impl SpriteStore {
     /// Every touching `(slot in a, slot in b)` pair once, sorted. A sprite in both lists is never
     /// paired with itself.
     pub fn list_vs_list(&mut self, a: ListId, b: ListId) -> Result<Vec<(u32, u32)>> {
+        let started = web_time::Instant::now();
+        let result = self.list_vs_list_untimed(a, b);
+        self.add_collision_time(started);
+        result
+    }
+
+    pub(crate) fn list_vs_list_untimed(&mut self, a: ListId, b: ListId) -> Result<Vec<(u32, u32)>> {
         self.refresh_collision_cache(a)?;
         self.refresh_collision_cache(b)?;
         self.lists[b].collision.ensure_grid();
@@ -153,6 +182,13 @@ impl SpriteStore {
 
     /// Every touching pair within `list` once, as `(earlier, later)` slots, sorted.
     pub fn within_list(&mut self, list: ListId) -> Result<Vec<(u32, u32)>> {
+        let started = web_time::Instant::now();
+        let result = self.within_list_untimed(list);
+        self.add_collision_time(started);
+        result
+    }
+
+    pub(crate) fn within_list_untimed(&mut self, list: ListId) -> Result<Vec<(u32, u32)>> {
         self.refresh_collision_cache(list)?;
         self.lists[list].collision.ensure_grid();
         let cache = &self.lists[list].collision;
@@ -322,6 +358,30 @@ mod tests {
         }
         assert!(!want.is_empty());
         assert_eq!(store.list_vs_list(a, b).unwrap(), want);
+    }
+
+    #[test]
+    fn shrinking_below_the_grid_threshold_drops_the_old_grid() {
+        let (mut store, list, ids) = random_scene(6, 200, 20.0);
+        assert!(!store.within_list(list).unwrap().is_empty() || ids.len() < 2);
+        for &id in &ids[10..] {
+            store.remove(list, id).unwrap();
+        }
+        let remaining = &ids[..10];
+        let want: Vec<(u32, u32)> = (0..10u32)
+            .flat_map(|i| (i + 1..10).map(move |j| (i, j)))
+            .filter(|&(i, j)| {
+                store
+                    .collides(remaining[i as usize], remaining[j as usize])
+                    .unwrap()
+            })
+            .collect();
+        assert_eq!(store.within_list(list).unwrap(), want);
+        for &id in remaining {
+            store.remove(list, id).unwrap();
+        }
+        assert!(store.within_list(list).unwrap().is_empty());
+        assert!(store.sprite_vs_list(ids[0], list).unwrap().is_empty());
     }
 
     #[test]

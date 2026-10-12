@@ -5,6 +5,7 @@
 //! list that contains it and marks just that slot dirty, so drawing an unchanged list does no
 //! per-sprite work at all.
 
+use std::cell::Cell;
 use std::ops::Range;
 use std::sync::{LazyLock, Mutex, MutexGuard};
 
@@ -133,6 +134,9 @@ pub struct SpriteStore {
     pub(crate) sprites: SlotMap<SpriteId, SpriteState>,
     pub(crate) lists: SlotMap<ListId, ListState>,
     pub(crate) colliders: SlotMap<ColliderId, Collider>,
+    /// Engine time spent since the last `take_frame_timings` (seconds).
+    update_seconds: Cell<f64>,
+    collision_seconds: Cell<f64>,
 }
 
 static GLOBAL: LazyLock<Mutex<SpriteStore>> = LazyLock::new(|| Mutex::new(SpriteStore::new()));
@@ -439,6 +443,13 @@ impl SpriteStore {
     /// Sprites with zero velocity are skipped, so they cost nothing to redraw. A moving
     /// sprite's instance is rewritten in every list that contains it.
     pub fn update_list(&mut self, list: ListId, dt: f64) -> Result<()> {
+        let started = web_time::Instant::now();
+        let result = self.update_list_untimed(list, dt);
+        self.add_update_time(started);
+        result
+    }
+
+    fn update_list_untimed(&mut self, list: ListId, dt: f64) -> Result<()> {
         if !(dt.is_finite() && dt >= 0.0) {
             return Err(Error::InvalidArgument(format!(
                 "delta_time must be a finite number >= 0, got {dt}"
@@ -479,6 +490,25 @@ impl SpriteStore {
             list.structure_version += 1;
         }
         Ok(())
+    }
+
+    /// Engine time (update ms, collision ms) since the last call; the game loop calls this once
+    /// per frame.
+    pub fn take_frame_timings(&self) -> (f64, f64) {
+        (
+            self.update_seconds.replace(0.0) * 1000.0,
+            self.collision_seconds.replace(0.0) * 1000.0,
+        )
+    }
+
+    pub(crate) fn add_update_time(&self, started: web_time::Instant) {
+        self.update_seconds
+            .set(self.update_seconds.get() + started.elapsed().as_secs_f64());
+    }
+
+    pub(crate) fn add_collision_time(&self, started: web_time::Instant) {
+        self.collision_seconds
+            .set(self.collision_seconds.get() + started.elapsed().as_secs_f64());
     }
 
     pub fn create_collider(&mut self, shape: Shape, offset: (f64, f64)) -> Result<ColliderId> {

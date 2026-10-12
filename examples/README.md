@@ -7,6 +7,10 @@ One runnable example per roadmap phase (see spec §10), numbered in order:
 - Phase 3's stress test lives in `benches/` (see `benches/README.md`)
 - `04_keyboard_ship.py`: Phase 4. Arrow keys or WASD steer the ship; Space re-centers it.
   In the browser: `http://localhost:8000/web/?example=04_keyboard_ship` (click the game to focus it).
+- `06_showcase.py`: performance showcase. Thousands of balls bouncing off walls and each other;
+  `=`/`-` add or remove 1,000, `T` switches bouncing between the engine and Python, `Space` pauses;
+  stats print to the console every second. Options: `--balls N`, `--seconds S`.
+  Browser: `?example=06_showcase` (stats in the developer console).
 - `05_collisions.py`: Phase 5. Steer the ship (arrow keys or WASD) through drifting asteroids;
   touched asteroids disappear and the title counts hits. Gold circles use `CircleCollider`, tomato
   squares `BoxCollider`, light blue squares `AABBCollider`. Browser: `?example=05_collisions`.

@@ -77,9 +77,11 @@ def _check_filter(value, allow_none):
 class FrameStats:
     """Frame timing averaged over the last ~1 second (draw counts are from the last frame)."""
 
-    def __init__(self, fps, frame_ms, render_cpu_ms, draw_calls, instances):
+    def __init__(self, fps, frame_ms, render_cpu_ms, draw_calls, instances, update_ms=0.0,
+                 collision_ms=0.0):
         self.fps, self.frame_ms, self.render_cpu_ms = fps, frame_ms, render_cpu_ms
         self.draw_calls, self.instances = draw_calls, instances
+        self.update_ms, self.collision_ms = update_ms, collision_ms
 
 
 class Window:
@@ -114,8 +116,10 @@ class Window:
 
     @property
     def frame_stats(self):
-        fps, frame_ms, render_cpu_ms, draw_calls, instances = _engine.frame_stats()
-        return FrameStats(fps, frame_ms, render_cpu_ms, int(draw_calls), int(instances))
+        fps, frame_ms, render_cpu_ms, draw_calls, instances, update_ms, collision_ms = (
+            _engine.frame_stats())
+        return FrameStats(fps, frame_ms, render_cpu_ms, int(draw_calls), int(instances),
+                          update_ms, collision_ms)
 
     def on_draw(self):
         pass
@@ -447,6 +451,12 @@ class SpriteList:
         flat = _call(_engine.collisions_with, self._id, others._id)
         a, b = self._sprites, others._sprites
         return [(a[flat[k]], b[flat[k + 1]]) for k in range(0, len(flat), 2)]
+
+    def bounce_each_other(self):
+        return int(_call(_engine.bounce_each_other, self._id))
+
+    def bounce_off(self, walls):
+        return int(_call(_engine.bounce_off, self._id, walls._id))
 
     def collisions(self):
         flat = _call(_engine.collisions, self._id)

@@ -72,7 +72,7 @@ We compared the class structure of other engines:
 #### `Window`
 - Opens an OS window with a wgpu surface and owns the main loop.
 - Constructor: `Window(width, height, title, *, filter, update_rate=1/60)`. `filter` is **required** (see "Texture filtering" below).
-- Properties: `width`, `height`, `filter`, `title` (writable since Phase 5), `frame_stats`, `show_fps`
+- Properties: `width`, `height`, `filter`, `title` (writable since Phase 5), `frame_stats` (fps, frame/render/update/collision ms, draw counts), `show_fps`
 - Methods: `run()` (blocks and runs the event loop), `clear(color=...)`, `is_key_pressed(key)` (Phase 4)
 - Overridable callbacks: `on_draw()` (once per displayed frame), `on_update(delta_time)` (fixed rate; `delta_time` == `update_rate`)
 - Rust side: winit event loop, wgpu device/queue/surface, frame presentation.
@@ -94,7 +94,7 @@ We compared the class structure of other engines:
 
 #### `SpriteList`
 - Holds sprites and draws them in a batch.
-- Methods: `append(sprite)`, `remove(sprite)`, `update(delta_time)`, `draw()`, `len()`; collisions (Phase 5): `collisions_with(other_list)`, `collisions()` (lists of sprite pairs)
+- Methods: `append(sprite)`, `remove(sprite)`, `update(delta_time)`, `draw()`, `len()`; collisions (Phase 5): `collisions_with(other_list)`, `collisions()` (lists of sprite pairs); bouncing (showcase): `bounce_each_other()`, `bounce_off(walls)` (equal-mass elastic circles; return the contact count)
 - Rust side: an instance buffer of sprite transforms, with one draw call per texture.
 
 ### Image formats (decided)
@@ -434,6 +434,7 @@ Each phase ends with a runnable example in `examples/` that demonstrates its goa
 - **Done when:** the ship collides correctly with many objects, and collision checks for Phase 3-scale lists fit within the frame budget.
 
 ### Milestone: Performance showcase demo (after Phase 5)
+- **Status (2026-10-12): implemented** on desktop and web; target met. See `docs/research/showcase-validation.md`. 10,000 bouncing balls at 60 FPS with 3.0 ms of engine work per frame (render 0.44, update 0.16, collision 2.40 ms). Largest count with the update + bounce step under 14 ms: engine 32,000, Python bouncing 14,000. Browser: 60 FPS up to at least 20,000 balls. Example: `examples/06_showcase.py`.
 - **Requested by the owner (2026-10-12):** a demo that shows off Ferrocade's speed.
 - **Scene:**
   - a window with a **wall around the border** (rectangle sprites, Phase 1c)
@@ -646,6 +647,8 @@ ferrocade/                 # repo root
 | 2026-10-12 | Phase 5 benchmark scene: 10,000 mixed colliders of 4-12 px over 1920×1080, moved every frame; times include building the Python result | Owner approved (research R9); the 800×600 dense variant is informational |
 | 2026-10-12 | Phase 5 implemented; collision grid built lazily for single-sprite queries (implementation detail found while meeting the 0.5 ms target) | `docs/research/phase5-validation.md` |
 | 2026-10-12 | Showcase: bouncing in Rust (explicit calls such as `bounce_off`) with a toggle to bouncing in Python; equal-mass elastic circles and flat walls; numbers printed to the console; engine-reported update and collision timings in `frame_stats` | Owner answers to showcase items 1 (C), 2 (i), 3 (a), 4 (console), 5 (engine timings) |
+| 2026-10-12 | Showcase scene corrected at planning to 1280×720 with radius 2–4 px balls (radius 3–6 px in 800×600 can't hold 10,000) | My spec assumption, not an owner decision; flagged to the owner |
+| 2026-10-12 | Showcase implemented: `bounce_each_other`/`bounce_off`, `FrameStats.update_ms`/`collision_ms`; fixed a Phase 5 bug where a list that shrank below 32 colliders kept using its old grid | `docs/research/showcase-validation.md` |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
 | 2026-10-12 | Collision detection implemented in Rust | Design open (§11) |
 | 2026-10-12 | winit for windowing | Confirmed |

@@ -34,6 +34,12 @@ class FrameStats:
     def draw_calls(self) -> int: ...
     @property
     def instances(self) -> int: ...
+    @property
+    def update_ms(self) -> float:
+        """Average engine time per frame moving sprites (`SpriteList.update`), in ms."""
+    @property
+    def collision_ms(self) -> float:
+        """Average engine time per frame in collision queries and bounce calls, in ms."""
 
 class Window:
     """A game window. Subclass it and override `on_draw` / `on_update`, then call `run()`."""
@@ -201,6 +207,13 @@ class SpriteList:
     def collisions_with(self, others: SpriteList) -> list[tuple[Sprite, Sprite]]:
         """Every touching (sprite from this list, sprite from `others`) pair once, in list order.
         A sprite in both lists is never paired with itself."""
+    def bounce_each_other(self) -> int:
+        """Bounce this list's circle-collider sprites off each other as equal-mass, perfectly
+        elastic circles (touching pairs exchange velocity along the line between centers;
+        overlaps are pushed apart). Returns the number of contacts resolved."""
+    def bounce_off(self, walls: SpriteList) -> int:
+        """Bounce this list's circle-collider sprites off `walls`, which never move (velocity into
+        a wall is reversed; overlaps are pushed out). Returns the number of contacts resolved."""
     def collisions(self) -> list[tuple[Sprite, Sprite]]:
         """Every touching pair within this list once, as (earlier, later) in list order."""
     def __len__(self) -> int: ...
