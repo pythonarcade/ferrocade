@@ -7,6 +7,7 @@ Run from the repository root:
     python examples/02_bouncing_ship.py --many     # 1,000 bouncing shapes; prints the frame time
     python examples/02_bouncing_ship.py --count    # counts on_update calls for 10 s, then exits
     python examples/02_bouncing_ship.py --check    # asserts the ship stays inside for 60 s
+    Add --fps to any mode to show FPS and frame time in the window title.
 """
 
 import random
@@ -38,6 +39,7 @@ class Bounce(fc.Window):
     def __init__(self, mode):
         super().__init__(WIDTH, HEIGHT, "Bouncing ship", filter=fc.NEAREST)
         self.mode = mode
+        self.show_fps = "--fps" in sys.argv
         self.sprites = fc.SpriteList()
         if mode == "many":
             self.add_many(1000)

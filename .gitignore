@@ -41,3 +41,6 @@ spike/pyodide-wheel/dist/
 spike/pyodide-wheel/crate/target/
 tools/web-check/node_modules/
 tools/web-check/out/
+
+# Benchmark results (summaries go in docs/research/)
+benches/results/

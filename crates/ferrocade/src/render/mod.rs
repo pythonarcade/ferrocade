@@ -176,6 +176,8 @@ impl Renderer {
             Some(acquired) => acquired,
             None => return Ok(()), // Nothing to draw into this frame (minimized or surface lost).
         };
+        // Timed after acquiring the frame, so waiting for vsync isn't counted as work.
+        let started = web_time::Instant::now();
 
         let mut encoder = self
             .device
@@ -209,6 +211,8 @@ impl Renderer {
         }
 
         self.queue.submit([encoder.finish()]);
+        self.sprites
+            .set_render_cpu_ms(started.elapsed().as_secs_f64() * 1000.0);
         if let Some(surface_texture) = surface_texture {
             self.queue.present(surface_texture);
         }

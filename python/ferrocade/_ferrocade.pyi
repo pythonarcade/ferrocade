@@ -18,6 +18,23 @@ LINEAR: Final[Filter]
 
 Color = tuple[int, int, int] | tuple[int, int, int, int]
 
+@final
+class FrameStats:
+    """Frame timing averaged over the last ~1 second (draw counts are from the last frame)."""
+
+    @property
+    def fps(self) -> float: ...
+    @property
+    def frame_ms(self) -> float:
+        """Average time between frames, in milliseconds."""
+    @property
+    def render_cpu_ms(self) -> float:
+        """Average engine render CPU time per frame, excluding the wait for vsync."""
+    @property
+    def draw_calls(self) -> int: ...
+    @property
+    def instances(self) -> int: ...
+
 class Window:
     """A game window. Subclass it and override `on_draw` / `on_update`, then call `run()`."""
 
@@ -46,6 +63,11 @@ class Window:
     @property
     def update_rate(self) -> float:
         """Seconds between `on_update` calls."""
+    show_fps: bool
+    """Show FPS and frame time in the window title (refreshed about once per second)."""
+    @property
+    def frame_stats(self) -> FrameStats:
+        """Frame timing of the running window (all zeros before `run()`)."""
     def run(self) -> None:
         """Open the window and run until it closes. Re-raises exceptions from callbacks."""
     def clear(self, color: Color | None = None) -> None:

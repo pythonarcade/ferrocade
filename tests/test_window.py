@@ -124,3 +124,53 @@ def test_run_can_be_called_again():
     for _ in range(2):
         with pytest.raises(StopTest):
             Short(320, 240, "again", filter=fc.NEAREST).run()
+
+
+# --- Phase 3: frame statistics and the FPS readout ----------------------------------------
+
+
+def test_frame_stats_zero_before_run():
+    s = make_window().frame_stats
+    assert (s.fps, s.frame_ms, s.render_cpu_ms, s.draw_calls, s.instances) == (0, 0, 0, 0, 0)
+
+
+def test_show_fps_defaults_off_and_toggles():
+    w = make_window()
+    assert w.show_fps is False
+    w.show_fps = True
+    assert w.show_fps is True
+
+
+@pytest.mark.display
+def test_frame_stats_while_running():
+    import time
+
+    class Game(fc.Window):
+        def __init__(self):
+            super().__init__(320, 240, "stats", filter=fc.NEAREST)
+            self.sprites = fc.SpriteList()
+            for i in range(3):
+                self.sprites.append(fc.RectangleSprite(10, 10, fc.color.WHITE, 50 + 40 * i, 120))
+            self.show_fps = True
+            self.deadline = None
+            self.stats = None
+
+        def on_draw(self):
+            self.clear()
+            self.sprites.draw()
+            now = time.perf_counter()
+            if self.deadline is None:
+                # The first ~1 s window includes startup jitter; read a steady-state one.
+                self.deadline = now + 2.6
+            elif now >= self.deadline:
+                self.stats = self.frame_stats
+                raise StopTest
+
+    game = Game()
+    with pytest.raises(StopTest):
+        game.run()
+    s = game.stats
+    assert 55 <= s.fps <= 65, s
+    assert s.frame_ms == pytest.approx(16.7, abs=2), s
+    assert 0 < s.render_cpu_ms < s.frame_ms, s
+    assert (s.draw_calls, s.instances) == (1, 3), s

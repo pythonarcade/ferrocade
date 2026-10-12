@@ -13,7 +13,7 @@ use winit::window::{Window, WindowId};
 
 use crate::render::Renderer;
 use crate::timestep::FixedTimestep;
-use crate::window::{GameCallbacks, RunError, WindowConfig, WindowState};
+use crate::window::{GameCallbacks, RunError, WindowConfig, WindowState, fps_title};
 use crate::{Error, frame, store};
 
 thread_local! {
@@ -37,6 +37,7 @@ pub fn run<C: GameCallbacks>(
         let event_loop = slot.as_mut().expect("event loop was just created");
         event_loop.set_control_flow(ControlFlow::Wait);
 
+        state.reset_stats();
         let mut app = App {
             config,
             state,
@@ -45,6 +46,7 @@ pub fn run<C: GameCallbacks>(
             renderer: None,
             timestep: FixedTimestep::new(config.update_rate),
             last_frame: None,
+            fps_in_title: false,
             error: None,
         };
         event_loop
@@ -68,6 +70,8 @@ struct App<'a, C: GameCallbacks> {
     renderer: Option<Renderer>,
     timestep: FixedTimestep,
     last_frame: Option<Instant>,
+    /// Whether the title currently shows the FPS readout (so it can be restored once).
+    fps_in_title: bool,
     error: Option<RunError<C::Error>>,
 }
 
@@ -145,6 +149,26 @@ impl<C: GameCallbacks> App<'_, C> {
             )
         {
             return self.fail(event_loop, RunError::Engine(e));
+        }
+
+        if let Some(renderer) = &self.renderer {
+            let stats = renderer.last_frame_stats();
+            let rolled = self.state.record_frame(
+                elapsed,
+                stats.render_cpu_ms,
+                stats.draw_calls,
+                stats.instances,
+            );
+            if let Some(window) = &self.window {
+                let show = self.state.show_fps();
+                if let Some(snapshot) = rolled.filter(|_| show) {
+                    window.set_title(&fps_title(&self.config.title, &snapshot));
+                    self.fps_in_title = true;
+                } else if !show && self.fps_in_title {
+                    window.set_title(&self.config.title);
+                    self.fps_in_title = false;
+                }
+            }
         }
 
         if let Err(e) = self.callbacks.check_interrupt() {

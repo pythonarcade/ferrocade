@@ -31,8 +31,8 @@ The frame statistics are foundational: the stress tool (US1) and the readout (US
 
 ## Phase 1: Setup
 
-- [ ] T001 Create `benches/requirements.txt` with `arcade==4.0.0.dev8` and `pygame-ce==2.5.8` (with a comment saying dev-only, and that Arcade pins `pyglet==3.0.dev11`). Add `benches/results/` to `.gitignore`. Install with `uv pip install -r benches/requirements.txt`, then confirm that `import arcade, pygame` works and print both versions.
-- [ ] T002 [P] Create `benches/README.md` (replacing the placeholder text) with the commands from quickstart.md, the sustainability rule (`fps ≥ 59` and work < 14 ms), and a note to always benchmark `maturin develop --release`.
+- [X] T001 Create `benches/requirements.txt` with `arcade==4.0.0.dev8` and `pygame-ce==2.5.8` (with a comment saying dev-only, and that Arcade pins `pyglet==3.0.dev11`). Add `benches/results/` to `.gitignore`. Install with `uv pip install -r benches/requirements.txt`, then confirm that `import arcade, pygame` works and print both versions.
+- [X] T002 [P] Create `benches/README.md` (replacing the placeholder text) with the commands from quickstart.md, the sustainability rule (`fps ≥ 59` and work < 14 ms), and a note to always benchmark `maturin develop --release`.
 
 ---
 
@@ -40,12 +40,12 @@ The frame statistics are foundational: the stress tool (US1) and the readout (US
 
 **Purpose**: engine-side timing that the stress tool and the readout both need.
 
-- [ ] T003 Add `render_cpu_ms: f64` to `FrameStats` in `crates/ferrocade/src/render/sprites.rs` and `crates/ferrocade/src/render/mod.rs`. `render_frame` measures its CPU time with `web_time::Instant`, **"excluding the surface-acquire wait"**: start the timer after `acquire()` returns, and stop it after `queue.submit`, before `present`.
-- [ ] T004 Add rolling frame statistics to `crates/ferrocade/src/window.rs`: a `FrameStatsWindow` that accumulates per-frame (interval, `render_cpu_ms`) and rolls every ~1 s into `fps`, `frame_ms` (average interval), and `render_cpu_ms` (average), with `draw_calls` and `instances` taken from the last frame. Store it in `WindowState` (shared, readable from the bindings). "Before the first second, report the values so far (fps can be 0)."
-- [ ] T005 Update the stats once per frame in `crates/ferrocade/src/platform/desktop.rs` (in `redraw`, after `render_frame`), using the frame interval already computed for the timestep.
-- [ ] T006 Add a read-only `frame_stats` property to `Window` in `crates/ferrocade-py/src/py_window.rs`, returning a new frozen `#[pyclass(name = "FrameStats")]` with `fps`, `frame_ms`, `render_cpu_ms`, `draw_calls`, `instances` (all 0 before `run()`). Register it, then export and stub it in `python/ferrocade/_ferrocade.pyi` (and add `FrameStats` to `python/ferrocade/__init__.py`).
-- [ ] T007 [P] Add the web parity in `crates/ferrocade-web/src/lib.rs`: `frame_stats() -> Vec<f64>` (`[fps, frame_ms, render_cpu_ms, draw_calls, instances]`), updated in `end_frame` from the frame interval passed by the shim. Add `Window.frame_stats` to the web shim `web/python/ferrocade/__init__.py`, returning a simple object with the same attributes.
-- [ ] T008 Add tests to `tests/test_window.py` (`@pytest.mark.display`): run a window for ~1.5 s, then check `frame_stats.fps` is in [55, 65], `frame_ms` is about 16.7 (±2), `render_cpu_ms` > 0 and < `frame_ms`, and `draw_calls`/`instances` match a list of 3 sprites. Add a non-display test that `frame_stats` is all zeros before `run()`. Run `cargo test --workspace` and `pytest`.
+- [X] T003 Add `render_cpu_ms: f64` to `FrameStats` in `crates/ferrocade/src/render/sprites.rs` and `crates/ferrocade/src/render/mod.rs`. `render_frame` measures its CPU time with `web_time::Instant`, **"excluding the surface-acquire wait"**: start the timer after `acquire()` returns, and stop it after `queue.submit`, before `present`.
+- [X] T004 Add rolling frame statistics to `crates/ferrocade/src/window.rs`: a `FrameStatsWindow` that accumulates per-frame (interval, `render_cpu_ms`) and rolls every ~1 s into `fps`, `frame_ms` (average interval), and `render_cpu_ms` (average), with `draw_calls` and `instances` taken from the last frame. Store it in `WindowState` (shared, readable from the bindings). "Before the first second, report the values so far (fps can be 0)."
+- [X] T005 Update the stats once per frame in `crates/ferrocade/src/platform/desktop.rs` (in `redraw`, after `render_frame`), using the frame interval already computed for the timestep.
+- [X] T006 Add a read-only `frame_stats` property to `Window` in `crates/ferrocade-py/src/py_window.rs`, returning a new frozen `#[pyclass(name = "FrameStats")]` with `fps`, `frame_ms`, `render_cpu_ms`, `draw_calls`, `instances` (all 0 before `run()`). Register it, then export and stub it in `python/ferrocade/_ferrocade.pyi` (and add `FrameStats` to `python/ferrocade/__init__.py`).
+- [X] T007 [P] Add the web parity in `crates/ferrocade-web/src/lib.rs`: `frame_stats() -> Vec<f64>` (`[fps, frame_ms, render_cpu_ms, draw_calls, instances]`), updated in `end_frame` from the frame interval passed by the shim. Add `Window.frame_stats` to the web shim `web/python/ferrocade/__init__.py`, returning a simple object with the same attributes.
+- [X] T008 Add tests to `tests/test_window.py` (`@pytest.mark.display`): run a window for ~1.5 s, then check `frame_stats.fps` is in [55, 65], `frame_ms` is about 16.7 (±2), `render_cpu_ms` > 0 and < `frame_ms`, and `draw_calls`/`instances` match a list of 3 sprites. Add a non-display test that `frame_stats` is all zeros before `run()`. Run `cargo test --workspace` and `pytest`.
 
 **Checkpoint**: the engine reports its own frame timing.
 
@@ -117,9 +117,9 @@ The frame statistics are foundational: the stress tool (US1) and the readout (US
 
 **Independent Test**: `python examples/02_bouncing_ship.py --many --fps` shows a title like `"Bouncing ship — 60 FPS, 16.67 ms"` that updates about once per second.
 
-- [ ] T018 [US3] Add `show_fps: bool` to `WindowState`, with a title refresh in `crates/ferrocade/src/window.rs` and `crates/ferrocade/src/platform/desktop.rs`. When the stats roll over (about 1 s) and `show_fps` is set, call `window.set_title(format!("{title} — {fps:.0} FPS, {frame_ms:.2} ms"))`. When it's switched off, restore `title` once. When off, the per-frame cost is just a flag check.
-- [ ] T019 [US3] Add the `show_fps` property (read/write, default `False`) to `crates/ferrocade-py/src/py_window.rs`, with a stub in `python/ferrocade/_ferrocade.pyi`. Add the web shim's `Window.show_fps`, which updates `document.title` on the same ~1 s roll, in `web/python/ferrocade/__init__.py`.
-- [ ] T020 [US3] Add a display test to `tests/test_window.py`: set `show_fps = True`, run ~1.5 s, and confirm no error, with `frame_stats.fps > 0`. (The title text itself is the winit window's and can't be read back. The format is unit-tested by factoring it into a pure helper in `crates/ferrocade/src/window.rs` with a Rust test.) Add a `--fps` flag to `examples/02_bouncing_ship.py` that sets `self.show_fps = True` (P5).
+- [X] T018 [US3] Add `show_fps: bool` to `WindowState`, with a title refresh in `crates/ferrocade/src/window.rs` and `crates/ferrocade/src/platform/desktop.rs`. When the stats roll over (about 1 s) and `show_fps` is set, call `window.set_title(format!("{title} — {fps:.0} FPS, {frame_ms:.2} ms"))`. When it's switched off, restore `title` once. When off, the per-frame cost is just a flag check.
+- [X] T019 [US3] Add the `show_fps` property (read/write, default `False`) to `crates/ferrocade-py/src/py_window.rs`, with a stub in `python/ferrocade/_ferrocade.pyi`. Add the web shim's `Window.show_fps`, which updates `document.title` on the same ~1 s roll, in `web/python/ferrocade/__init__.py`.
+- [X] T020 [US3] Add a display test to `tests/test_window.py`: set `show_fps = True`, run ~1.5 s, and confirm no error, with `frame_stats.fps > 0`. (The title text itself is the winit window's and can't be read back. The format is unit-tested by factoring it into a pure helper in `crates/ferrocade/src/window.rs` with a Rust test.) Add a `--fps` flag to `examples/02_bouncing_ship.py` that sets `self.show_fps = True` (P5).
 
 **Checkpoint**: all three stories are complete.
 

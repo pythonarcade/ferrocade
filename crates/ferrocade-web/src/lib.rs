@@ -40,6 +40,8 @@ pub struct Engine {
     logical_size: (u32, u32),
     filter: Filter,
     timestep: FixedTimestep,
+    stats: ferrocade::window::WindowState,
+    last_frame: Option<web_time::Instant>,
     textures: Vec<TextureRef>,
     sprites: Vec<Option<SpriteId>>,
     lists: Vec<Option<ListId>>,
@@ -111,6 +113,8 @@ impl Engine {
             // Replaced by configure(); the Python Window always passes its required filter.
             filter: Filter::Nearest,
             timestep: FixedTimestep::new(1.0 / 60.0),
+            stats: ferrocade::window::WindowState::new(width, height),
+            last_frame: None,
             textures: Vec::new(),
             sprites: Vec::new(),
             lists: Vec::new(),
@@ -170,7 +174,14 @@ impl Engine {
                 self.logical_size,
                 self.filter,
             )
-            .map_err(js_err)
+            .map_err(js_err)?;
+        let now = web_time::Instant::now();
+        let interval = self.last_frame.map_or(0.0, |t| (now - t).as_secs_f64());
+        self.last_frame = Some(now);
+        let s = self.renderer.last_frame_stats();
+        self.stats
+            .record_frame(interval, s.render_cpu_ms, s.draw_calls, s.instances);
+        Ok(())
     }
 
     /// Decode an image (bytes read by Python from Pyodide's filesystem), cached by path.
@@ -275,6 +286,18 @@ impl Engine {
         store::global()
             .set_color(self.sprite(sprite)?, rgba)
             .map_err(js_err)
+    }
+
+    /// `[fps, frame_ms, render_cpu_ms, draw_calls, instances]` averaged over ~1 s.
+    pub fn frame_stats(&self) -> Vec<f64> {
+        let s = self.stats.frame_stats();
+        vec![
+            s.fps,
+            s.frame_ms,
+            s.render_cpu_ms,
+            s.draw_calls as f64,
+            s.instances as f64,
+        ]
     }
 
     /// Draw calls in the most recent frame (for the browser checks).

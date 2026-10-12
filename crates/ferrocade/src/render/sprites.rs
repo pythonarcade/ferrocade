@@ -9,10 +9,12 @@ use crate::store::{ListId, SpriteStore};
 use crate::texture::Filter;
 
 /// Work done by the most recent frame (for tests and performance displays).
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct FrameStats {
     pub draw_calls: u32,
     pub instances: u32,
+    /// CPU time spent in `render_frame`, excluding the wait for the next surface texture.
+    pub render_cpu_ms: f64,
 }
 
 pub struct SpritePipeline {
@@ -178,6 +180,10 @@ impl SpritePipeline {
 
     pub fn stats(&self) -> FrameStats {
         self.stats
+    }
+
+    pub fn set_render_cpu_ms(&mut self, ms: f64) {
+        self.stats.render_cpu_ms = ms;
     }
 
     pub fn draw_list(&mut self, pass: &mut wgpu::RenderPass<'_>, id: ListId) {

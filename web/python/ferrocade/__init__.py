@@ -25,6 +25,7 @@ __all__ = [
     "NEAREST",
     "CircleSprite",
     "Filter",
+    "FrameStats",
     "RectangleSprite",
     "Sprite",
     "SpriteList",
@@ -67,6 +68,14 @@ def _check_filter(value, allow_none):
     return value.value
 
 
+class FrameStats:
+    """Frame timing averaged over the last ~1 second (draw counts are from the last frame)."""
+
+    def __init__(self, fps, frame_ms, render_cpu_ms, draw_calls, instances):
+        self.fps, self.frame_ms, self.render_cpu_ms = fps, frame_ms, render_cpu_ms
+        self.draw_calls, self.instances = draw_calls, instances
+
+
 class Window:
     def __init__(self, width=800, height=600, title="Ferrocade", *, filter, update_rate=1 / 60):
         _check_filter(filter, allow_none=False)
@@ -80,12 +89,19 @@ class Window:
         self._update_rate = float(update_rate)
         self._proxy = None
         self._last = None
+        self.show_fps = False
+        self._title_refreshed = 0.0
 
     width = property(lambda self: self._width)
     height = property(lambda self: self._height)
     title = property(lambda self: self._title)
     filter = property(lambda self: self._filter)
     update_rate = property(lambda self: self._update_rate)
+
+    @property
+    def frame_stats(self):
+        fps, frame_ms, render_cpu_ms, draw_calls, instances = _engine.frame_stats()
+        return FrameStats(fps, frame_ms, render_cpu_ms, int(draw_calls), int(instances))
 
     def on_draw(self):
         pass
@@ -123,6 +139,11 @@ class Window:
                 self.on_draw()
             finally:
                 _call(_engine.end_frame)
+            if now - self._title_refreshed >= 1.0:
+                self._title_refreshed = now
+                s = self.frame_stats
+                js.document.title = (f"{self._title} — {s.fps:.0f} FPS, {s.frame_ms:.2f} ms"
+                                     if self.show_fps else self._title)
         except Exception:
             self._proxy.destroy()
             self._proxy = None

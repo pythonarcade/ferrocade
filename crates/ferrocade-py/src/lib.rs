@@ -17,6 +17,7 @@ fn _ferrocade(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     py_filter::register(m)?;
     m.add_class::<py_window::PyWindow>()?;
+    m.add_class::<py_window::PyFrameStats>()?;
     m.add_class::<py_texture::PyTexture>()?;
     m.add_class::<py_sprite::PySprite>()?;
     m.add_class::<py_sprite_list::PySpriteList>()?;

@@ -1,0 +1,4 @@
+# Dev-only benchmark dependencies (Phase 3). Never Ferrocade runtime dependencies.
+# Arcade 4.0 pre-release (pins pyglet==3.0.dev11) and pygame-ce (community Pygame).
+arcade==4.0.0.dev8
+pygame-ce==2.5.8

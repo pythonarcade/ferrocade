@@ -10,6 +10,34 @@ use pyo3::types::{PyDict, PyTuple};
 use crate::errors::{IntoPyResult, to_pyerr};
 use crate::py_filter::PyFilter;
 
+/// Frame timing averaged over the last ~1 second (draw counts are from the last frame).
+#[pyclass(frozen, name = "FrameStats", module = "ferrocade")]
+pub struct PyFrameStats {
+    /// Frames per second.
+    #[pyo3(get)]
+    fps: f64,
+    /// Average time between frames, in milliseconds.
+    #[pyo3(get)]
+    frame_ms: f64,
+    /// Average engine render CPU time per frame (excludes waiting for vsync), in milliseconds.
+    #[pyo3(get)]
+    render_cpu_ms: f64,
+    #[pyo3(get)]
+    draw_calls: u32,
+    #[pyo3(get)]
+    instances: u32,
+}
+
+#[pymethods]
+impl PyFrameStats {
+    fn __repr__(&self) -> String {
+        format!(
+            "FrameStats(fps={:.1}, frame_ms={:.2}, render_cpu_ms={:.3}, draw_calls={}, instances={})",
+            self.fps, self.frame_ms, self.render_cpu_ms, self.draw_calls, self.instances
+        )
+    }
+}
+
 #[pyclass(subclass, name = "Window", module = "ferrocade")]
 pub struct PyWindow {
     /// Set by `__init__`; `None` if a subclass forgot to call `super().__init__()`.
@@ -97,6 +125,30 @@ impl PyWindow {
     #[getter]
     fn update_rate(&self) -> PyResult<f64> {
         Ok(self.config()?.update_rate)
+    }
+
+    /// Frame timing of the running window (all zeros before `run()`).
+    #[getter]
+    fn frame_stats(&self) -> PyFrameStats {
+        let s = self.state.frame_stats();
+        PyFrameStats {
+            fps: s.fps,
+            frame_ms: s.frame_ms,
+            render_cpu_ms: s.render_cpu_ms,
+            draw_calls: s.draw_calls,
+            instances: s.instances,
+        }
+    }
+
+    /// Show FPS and frame time in the window title (refreshed about once per second).
+    #[getter]
+    fn show_fps(&self) -> bool {
+        self.state.show_fps()
+    }
+
+    #[setter]
+    fn set_show_fps(&self, on: bool) {
+        self.state.set_show_fps(on);
     }
 
     /// Called once per displayed frame. Override to draw.
