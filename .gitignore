@@ -15,6 +15,8 @@ build/
 # Native extension builds (maturin develop)
 python/ferrocade/*.pyd
 python/ferrocade/*.so
+python/ferrocade/*.pdb
+*.pdb
 
 # Web build output
 web/dist/
