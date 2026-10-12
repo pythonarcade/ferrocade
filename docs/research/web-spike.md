@@ -7,7 +7,7 @@
 
 ## 1. Summary and recommendation
 
-> **Status: Proposed (pending owner acceptance).** Nothing in the engine spec is marked decided yet.
+> **Status: Accepted by the owner (2026-10-12).** It's recorded in the engine spec §9 and its decision log.
 
 **It works.** `examples/01_centered_ship.py` runs **unchanged** in the browser, in Chrome and Edge,
 with both **WebGPU** and **WebGL2**. The ship renders 99×75, centered to the same half pixel as on

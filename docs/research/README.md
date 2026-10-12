@@ -5,4 +5,4 @@ Record what was tried, what was measured, and the conclusion.
 
 ## Reports
 - [phase1-validation.md](phase1-validation.md): Phase 1 validation record
-- [web-spike.md](web-spike.md): Phase 1b web feasibility spike (recommendation pending owner acceptance)
+- [web-spike.md](web-spike.md): Phase 1b web feasibility spike (recommendation accepted: web = approach B)

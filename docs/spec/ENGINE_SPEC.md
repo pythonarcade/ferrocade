@@ -315,9 +315,10 @@ This is the **hardest platform requirement**. The engine API is Python, so the b
 | **B. Pyodide + separate engine WASM module** | Engine built as `wasm32-unknown-unknown` (where wgpu/winit web support is strongest), exposed to JS. A Python-side shim calls it through Pyodide's JS bridge. | Uses the best-supported wgpu/winit web path. | Two bindings to maintain. Python→JS→WASM calls are slower, which hurts the "minimize conversions" goal. Bulk APIs (§7) become more important. |
 | **C. RustPython** | A Python interpreter written in Rust, compiled into the same WASM as the engine. | Single WASM module, no Emscripten. | Incomplete CPython compatibility, slower interpreter, no C-extension ecosystem. |
 
-- **Current leaning:** Option A, because it keeps one binding layer and real CPython. Option B is the fallback.
+- **Decided (2026-10-12, after the Phase 1b spike): Option B.** Pyodide plus the engine as a separate wasm-bindgen module, with a browser Python package implementing the same API. It's proven to run the Phase 1 example unchanged on WebGPU and WebGL2.
+- **Revisit Option A** when all of these land: wgpu Emscripten support (gfx-rs/wgpu#10515), a Pyodide ABI with Emscripten ≥ 6.0.10 (pyodide#6476, expected with Python 3.16), and wasm-bindgen side-module support. To re-test, run `spike/pyodide-wheel/build.sh render`. A's wheel pipeline (A1) already works.
 - **Action:** run a **web feasibility spike early** (Phase 1b, right after v1 works on Windows). Build the v1 example (window + centered ship) under Pyodide before the engine grows. The result decides whether the platform layer needs a custom web backend.
-- **Phase 1b spike results:** `docs/research/web-spike.md` (recommendation pending owner acceptance).
+- **Phase 1b spike results:** `docs/research/web-spike.md` (recommendation accepted 2026-10-12). Before shipping web support, do the "required before shipping web" items in its engine-impact table (a real web package, a shared API test suite run against both bindings, an asset manifest, a shared `color.py`).
 - Web-specific notes for later: Pyodide can run in a Web Worker with `OffscreenCanvas`. Audio requires a user gesture before starting. Assets must be preloaded into Pyodide's virtual filesystem or fetched asynchronously.
 
 ### Distribution (later)
@@ -498,7 +499,7 @@ ferrocade/                 # repo root
 | 2026-10-12 | 2D only for prototypes; 3D out of scope | Ortho projection, no depth buffer, draw order = layering |
 | 2026-10-12 | Platforms: Windows (prototype), macOS, web (WASM) | Portability rules in §9; Linux unofficial |
 | 2026-10-12 | Renderer limited to WebGL2-level features by default | Guarantees the web fallback works |
-| — | Python-in-browser approach (Pyodide wheel vs. separate WASM) | Open; Phase 1b spike |
+| 2026-10-12 | Web: Option B (Pyodide + separate wasm-bindgen engine module); revisit A when upstream unblocks it | Owner accepted the Phase 1b spike recommendation (`docs/research/web-spike.md`) |
 | 2026-10-12 | Phased roadmap: 1 centered ship → 2 bouncing → 3 stress test → 4 keyboard → 5 collisions | §10 |
 | 2026-10-12 | Collision detection implemented in Rust | Design open (§11) |
 | 2026-10-12 | winit for windowing | Confirmed |
